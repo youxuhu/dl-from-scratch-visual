@@ -2,6 +2,10 @@
 
 1000 个随机输入，每个 100 维，穿过 5 个隐藏层（每层 100 个神经元，不带偏置）。
 sigmoid 试 标准差 1、0.01、Xavier；ReLU 试 0.01、Xavier、He。打印每层的统计量和直方图计数。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch06/weight_init_activation_histogram.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。实验设置（1000 个 100 维输入、5 层、每层 100 个神经元）与原书一致；
+注释改写成中文，另把几种初始值放在一起比较并打印统计量。
 """
 import os
 import sys

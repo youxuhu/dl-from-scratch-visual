@@ -102,6 +102,6 @@ def test_compare_mnist_runs_on_toy_data():
     mod = load("optimizer_compare_mnist")
     from common.util import toy_digits
     (x, t), _ = toy_digits(300, 10)
-    losses, _ = mod.compare(x, t, iters=15, batch_size=32, report_every=0)
+    losses, _ = mod.compare(x, t, max_iterations=15, batch_size=32, report_every=0)
     assert set(losses) == {"SGD", "Momentum", "AdaGrad", "Adam"}
     assert all(len(v) == 15 for v in losses.values())

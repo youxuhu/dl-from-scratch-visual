@@ -3,16 +3,18 @@
 ## 这讲讲什么
 SGD 在 f(x, y) = x²/20 + y² 这种「一边陡一边缓」的函数上会走之字形。本讲依次介绍 Momentum（带速度的小球）、AdaGrad（按累积梯度平方给每个参数单独降学习率）、Adam（两者结合并做偏置修正），在等高线上让四个优化器赛跑，再到 MNIST 上比一比。后半讲讲权重初始值：为什么不能全一样，标准差 1 和 0.01 时激活值分布出了什么问题，Xavier 初始值适合 sigmoid，He 初始值适合 ReLU。
 
-优化器在 common/optimizer.py（SGD、Momentum、Nesterov、AdaGrad、RMSprop、Adam，接口都是 update(params, grads)）；多层网络在 common/multi_layer_net.py（MultiLayerNet，weight_init_std 可取 'relu'/'he'、'sigmoid'/'xavier' 或一个数字）。
+优化器在 common/optimizer.py（SGD、Momentum、Nesterov、AdaGrad、RMSprop、Adam，接口都是 update(params, grads)，Adam 和 Nesterov 的更新式按原书写法：Adam 把偏置修正合并进学习率 lr_t）；多层网络在 common/multi_layer_net.py（MultiLayerNet，weight_init_std 可取 'relu'/'he'、'sigmoid'/'xavier' 或一个数字）。
+
+对应鱼书：第6章 ch06/optimizer_compare_naive.py、ch06/optimizer_compare_mnist.py、ch06/weight_init_activation_histogram.py、ch06/weight_init_compare.py（第6章 6.1、6.2节；优化器对应 common/optimizer.py，网络对应 common/multi_layer_net.py）
 
 ## 文件
 | 文件 | 内容 |
 |---|---|
-| optimizer_compare_naive.py | 等高线赛跑：起点 (-7.0, 2.0)，30 步；打印终点和前 3 步的 v、h、m |
-| optimizer_compare_mnist.py | MNIST 上比较四种优化器（5 层网络，批 128，2000 次；支持 QUICK=1） |
-| weight_init_activation_histogram.py | 5 个隐藏层的激活值分布：sigmoid 和 ReLU 各三种初始值 |
-| weight_init_compare.py | MNIST 上比较 std=0.01、Xavier、He 三种初始值（支持 QUICK=1） |
-| zero_init.py | 权重全相同时，两个隐藏神经元训练后仍完全相同 |
+| optimizer_compare_naive.py | 改编自书中同名文件。等高线赛跑：起点 (-7.0, 2.0)，30 步；打印终点和前 3 步的 v、h、m |
+| optimizer_compare_mnist.py | 改编自书中同名文件。MNIST 上比较四种优化器（5 层网络，批 128，2000 次；支持 QUICK=1） |
+| weight_init_activation_histogram.py | 改编自书中同名文件。5 个隐藏层的激活值分布：sigmoid 和 ReLU 各三种初始值 |
+| weight_init_compare.py | 改编自书中同名文件。MNIST 上比较 std=0.01、Xavier、He 三种初始值（支持 QUICK=1） |
+| zero_init.py | 本仓库补充（书中 6.2.1 节的讲解，没有对应源码文件）。权重全相同时，两个隐藏神经元训练后仍完全相同 |
 
 画图是可选的：装了 matplotlib 时，图存到 lecture11/output/（common/util.py 的 get_pyplot），没装就只打印数值。
 
@@ -45,7 +47,7 @@ QUICK=1 python weight_init_compare.py
   - sigmoid + Xavier：标准差约 0.11 到 0.21，分布较宽。
   - ReLU + std=0.01：第 3 层起 100% 的值小于 0.01；ReLU + Xavier：平均值逐层从 0.397 降到 0.116；ReLU + He：各层平均值都在 0.56 到 0.66，分布一致。
 - 权重全设 0.5，训练 20 步后 W1 的两列仍完全相同（0.451714、0.528061、0.522863）。
-- MNIST 上的优化器比较，QUICK=1（2000 张训练图、120 次迭代、测试集前 1000 张）：平滑后最终损失 SGD 1.2590、Momentum 0.2382、AdaGrad 0.0475、Adam 0.1254，测试精度 SGD 0.6420、Momentum 0.8460、AdaGrad 0.8850、Adam 0.8590，SGD 明显落后。完整设置（60000 张、2000 次迭代）：未实测。
+- MNIST 上的优化器比较，QUICK=1（2000 张训练图、120 次迭代、测试集前 1000 张）：平滑后最终损失 SGD 1.2590、Momentum 0.2382、AdaGrad 0.0475、Adam 0.1223，测试精度 SGD 0.6420、Momentum 0.8460、AdaGrad 0.8850、Adam 0.8670，SGD 明显落后。完整设置（60000 张、2000 次迭代）：未实测。
 - 初始值比较，QUICK=1（150 次迭代）：std=0.01 损失 2.3025 → 2.3017 几乎不降（测试精度 0.0990），Xavier 降到 2.1824（0.3260），He 降到 0.9796（0.6930）。完整设置：未实测。
 
 ## 测试

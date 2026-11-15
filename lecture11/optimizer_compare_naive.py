@@ -2,6 +2,9 @@
 
 起点 (-7.0, 2.0)，学习率 SGD 0.95、Momentum 0.1、AdaGrad 1.5、Adam 0.3，各走 30 步。
 同时打印前 3 步 Momentum 的速度 v、AdaGrad 的水位 h、Adam 的 m 和 v。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch06/optimizer_compare_naive.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。函数名 f、df，起点 init_pos、学习率和步数与原书一致；另记录前 3 步的内部状态。注释改写成中文，保留中间结果打印和 QUICK 模式。
 """
 import sys
 from pathlib import Path
@@ -15,8 +18,8 @@ from common.util import get_pyplot  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "output"
 
-START = (-7.0, 2.0)
-STEPS = 30
+init_pos = (-7.0, 2.0)
+STEPS = 30  # 原书同样走 30 步
 SETTINGS = {
     "SGD": (SGD, 0.95),
     "Momentum": (Momentum, 0.1),
@@ -29,7 +32,7 @@ def f(x, y):
     return x ** 2 / 20.0 + y ** 2
 
 
-def grad_f(x, y):
+def df(x, y):
     return x / 10.0, 2.0 * y
 
 
@@ -37,11 +40,11 @@ def race(name, steps=STEPS):
     """返回轨迹 (steps+1, 2) 和前 3 步的内部状态快照。"""
     cls, lr = SETTINGS[name]
     opt = cls(lr=lr)
-    params = {"x": np.array(START[0]), "y": np.array(START[1])}
-    path = [START]
+    params = {"x": np.array(init_pos[0]), "y": np.array(init_pos[1])}
+    path = [init_pos]
     states = []
     for i in range(steps):
-        gx, gy = grad_f(float(params["x"]), float(params["y"]))
+        gx, gy = df(float(params["x"]), float(params["y"]))
         opt.update(params, {"x": np.array(gx), "y": np.array(gy)})
         path.append((float(params["x"]), float(params["y"])))
         if i < 3:
