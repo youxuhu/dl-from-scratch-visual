@@ -21,7 +21,7 @@ def load(name):
 
 
 rf = load("receptive_field")
-st = load("deep_convnet_structure")
+st = load("deep_convnet")
 
 
 def test_receptive_field():

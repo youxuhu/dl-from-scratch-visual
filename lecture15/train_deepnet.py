@@ -2,6 +2,9 @@
 
 完整训练：60000 张，20 个 epoch，批大小 100，Adam 学习率 0.001，用 Trainer。纯 NumPy 很慢，要跑几个小时。
 QUICK=1：1200 张训练图、200 张测试图、2 个 epoch，只确认流程。参数存到 lecture15/output/deep_convnet_params.pkl。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch08/train_deepnet.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。变量名（network、trainer）和训练设置（20 个 epoch、批大小 100、Adam 学习率 0.001、每 epoch 评估 1000 张）与原书一致；另加 QUICK 模式和固定随机种子，注释改写成中文。
 """
 import os
 import sys
@@ -22,14 +25,14 @@ def main():
     quick = is_quick()
     (x_train, t_train), (x_test, t_test), source = get_mnist(
         flatten=False, train_limit=1200 if quick else None, test_limit=200 if quick else None)
-    net = DeepConvNet(seed=0)
-    trainer = Trainer(net, x_train, t_train, x_test, t_test,
+    network = DeepConvNet(seed=0)
+    trainer = Trainer(network, x_train, t_train, x_test, t_test,
                       epochs=2 if quick else 20, mini_batch_size=100,
                       optimizer="Adam", optimizer_param={"lr": 0.001},
                       evaluate_sample_num_per_epoch=200 if quick else 1000, seed=0)
     acc = trainer.train()
     OUT.mkdir(exist_ok=True)
-    net.save_params(PARAMS)
+    network.save_params(PARAMS)  # 参数的保存
     print(f"数据：{source}；测试精度 {acc:.4f}；参数已保存到 {PARAMS}")
 
 

@@ -14,22 +14,24 @@ DeepConvNet 在 common/deep_convnet.py。
 - 本讲新增到 common：common/deep_convnet.py 的 DeepConvNet。
 - lecture15/_trained.py 是本讲脚本共用的小模块（读取或当场训练 DeepConvNet），本身也只调用 common。
 
+对应鱼书：第8章 ch08/deep_convnet.py、ch08/train_deepnet.py、ch08/misclassified_mnist.py、ch08/half_float_network.py（第8章；DeepConvNet 本身放在 common/deep_convnet.py）
+
 ## 文件
 | 文件 | 内容 |
 |---|---|
-| receptive_field.py | 5×5 卷积 25 个参数 vs 两层 3×3 卷积 18 个参数；用 Convolution 层反向传播求两层 3×3 的感受野 |
-| deep_convnet_structure.py | DeepConvNet 的层顺序、逐层形状、参数总数 |
-| train_deepnet.py | 用 Trainer（Adam，学习率 0.001）训练 DeepConvNet（支持 QUICK=1），参数存到 lecture15/output/ |
-| misclassified_mnist.py | 列出认错的测试样本（预测、真实标签），有 matplotlib 时存图 |
-| half_float_network.py | 参数、输入、每层输出舍入成 float16 后的精度，和 float64 对比 |
-| data_augmentation.py | 对一张手写数字做旋转 ±15°、上下左右平移 3 格、裁剪放大 |
+| receptive_field.py | 本仓库补充。5×5 卷积 25 个参数 vs 两层 3×3 卷积 18 个参数；用 Convolution 层反向传播求两层 3×3 的感受野 |
+| deep_convnet.py | 对应书中同名文件，类本身在 common/deep_convnet.py。DeepConvNet 的层顺序、逐层形状、参数总数 |
+| train_deepnet.py | 改编自书中同名文件。用 Trainer（Adam，学习率 0.001）训练 DeepConvNet（支持 QUICK=1），参数存到 lecture15/output/ |
+| misclassified_mnist.py | 改编自书中同名文件。列出认错的测试样本（预测、真实标签），有 matplotlib 时存图 |
+| half_float_network.py | 改编自书中同名文件。参数、输入、每层输出舍入成 float16 后的精度，和 float64 对比 |
+| data_augmentation.py | 本仓库补充。对一张手写数字做旋转 ±15°、上下左右平移 3 格、裁剪放大 |
 | _trained.py | 共用：有保存的参数就读取，没有就当场简单训练 |
 
 ## 怎么运行
 ```bash
 cd lecture15
 python receptive_field.py
-python deep_convnet_structure.py
+python deep_convnet.py
 python data_augmentation.py
 QUICK=1 python train_deepnet.py      # 1200 张、2 个 epoch，二十秒左右
 python train_deepnet.py              # 完整：60000 张、20 个 epoch（纯 NumPy，要几个小时）
@@ -46,8 +48,8 @@ misclassified_mnist.py 和 half_float_network.py 会优先读取 train_deepnet.p
 - 数据扩充（MNIST 测试集第 0 张，标签 7）：7 种变换，形状都是 28×28；平移后与原图逐像素相同的比例约 86% 到 87%，旋转 ±15° 约 90%。
 
 QUICK=1 下一次运行的结果（只确认流程，不代表模型实力）：
-- train_deepnet.py：测试精度 0.5150（200 张测试图）。
-- half_float_network.py（读取上面 QUICK 训练的参数，300 张测试图）：64 位 0.4967，16 位 0.4967，没有变化。
+- train_deepnet.py：测试精度 0.5050（200 张测试图）。
+- half_float_network.py（读取上面 QUICK 训练的参数，300 张测试图）：64 位 0.4867，16 位 0.4867，没有变化。
 
 未实测：
 - 大纲里的 DeepConvNet 精度 0.9797 和 float16 精度 0.9798 是用原书仓库自带参数测得的，本仓库不使用那份参数，也还没有跑过 train_deepnet.py 的完整训练，所以完整训练后的精度、错例和 float16 对比都还没有实测值。视频制作时需要先完整训练一次，再用实际输出替换。

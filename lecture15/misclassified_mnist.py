@@ -1,6 +1,9 @@
 """第15讲：把 DeepConvNet 认错的样本挑出来，预测和真实标签并排显示。
 
 QUICK=1 只看前 300 张测试图。装了 matplotlib 时把前 20 张错例存成 lecture15/output/misclassified.png。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch08/misclassified_mnist.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。思路与原书一致（逐批推理、挑出预测和标签不同的样本并排显示）；参数改为读取本仓库自己训练的结果，注释改写成中文。
 """
 import os
 import sys
