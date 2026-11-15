@@ -1,15 +1,13 @@
-"""异或：一层做不到，叠两层就行。第一层并排放与非门和或门，第二层放与门。"""
-from gates import AND, INPUTS, NAND, OR
-
-
-def XOR(x1, x2):
-    s1 = NAND(x1, x2)
-    s2 = OR(x1, x2)
-    return AND(s1, s2)
+"""异或：一层做不到，叠两层就行。实现见 xor_gate.py（对齐鱼书 ch02/xor_gate.py）。"""
+from gates import INPUTS
+from xor_gate import XOR
 
 
 def trace():
     """每组输入的中间结果：[(x1, x2, s1, s2, y), ...]"""
+    from nand_gate import NAND
+    from or_gate import OR
+    from and_gate import AND
     rows = []
     for x1, x2 in INPUTS:
         s1, s2 = NAND(x1, x2), OR(x1, x2)
