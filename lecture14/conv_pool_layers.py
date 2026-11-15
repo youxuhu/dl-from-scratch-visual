@@ -2,6 +2,8 @@
 
 卷积：im2col → 滤波器 reshape(FN, -1).T → 矩阵乘法加偏置 → reshape 成 (N, OH, OW, FN) → transpose(0, 3, 1, 2)。
 池化：im2col 后每行一个窗口 → 每行取最大值 → reshape 回特征图。
+
+本仓库补充，对应书中 7.4.3、7.4.4 节；两个层对应书中 common/layers.py 的 Convolution、Pooling。
 """
 import sys
 from pathlib import Path

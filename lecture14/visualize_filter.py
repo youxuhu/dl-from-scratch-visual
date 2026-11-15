@@ -3,6 +3,10 @@
 如果 lecture14/output/ 里已有 train_convnet.py 存下的参数就直接读，否则当场用 Adam 训练一小会儿。
 比较训练前后 30 个 5×5 滤波器的「平滑程度」（相邻格的差别），训练后滤波器更像边缘、斑块而不是噪点。
 装了 matplotlib 时把 6×5 网格图存到 lecture14/output/filters.png。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch07/visualize_filter.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。思路与原书一致（比较学习前后的第 1 层滤波器）；注释改写成中文，
+另加了「平滑程度」的数值指标和竖边、横边滤波器的对照，网格图改为 6×5 排 30 个。
 """
 import os
 import sys

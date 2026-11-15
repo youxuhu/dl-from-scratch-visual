@@ -1,6 +1,8 @@
 """第14讲：LeNet 和 AlexNet 的结构链，用输出大小公式逐层算形状，并数一数卷积层参数。
 
 只是结构示意（不训练）。LeNet 输入 1×32×32，AlexNet 输入 3×227×227（常见的修正版尺寸）。
+
+本仓库补充，对应书中 7.7 节，书中没有对应源码文件。
 """
 import sys
 from pathlib import Path

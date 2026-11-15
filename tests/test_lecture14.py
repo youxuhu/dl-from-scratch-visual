@@ -98,3 +98,11 @@ def test_edge_filter_prefers_vertical_strokes():
     v, h = vf.edge_response(digit)
     assert v.sum() > 3 * h.sum()
     assert vf.roughness(np.random.default_rng(0).standard_normal((5, 1, 5, 5))).mean() > 0.3
+
+
+def test_gradient_check_script_book_setting():
+    """gradient_check.py：原书的 1×10×10 小网络，各参数平均绝对误差 < 1e-6。"""
+    gc = load("gradient_check")
+    diffs = gc.check(seed=0)
+    assert set(diffs) == {"W1", "b1", "W2", "b2", "W3", "b3"}
+    assert max(diffs.values()) < 1e-6
