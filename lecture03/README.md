@@ -9,7 +9,7 @@
 | 文件 | 内容 |
 |---|---|
 | data/training_log.csv | 自己编的 8 个 epoch 的训练日志 |
-| data/iris_sample.csv | 鸢尾花数据集里挑的 12 行（每种 4 行），随仓库提供，不用联网 |
+| data/iris_sample.csv | 鸢尾花数据集里挑的 12 行（每种 4 行），随仓库提供，不用联网。已和 UCI 原始文件 iris.data（https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data）逐行核对，完全一致，对应其中第 0 到 3、50 到 53、100 到 103 行（从 0 数）；物种名去掉了 `Iris-` 前缀 |
 | training_log.py | 读表、统计、筛选、缺失值、转数组、画学习曲线（存到 output/） |
 | iris_demo.py | value_counts、groupby 求均值、筛选、to_numpy、get_dummies 做 one hot |
 
