@@ -53,7 +53,7 @@ def main():
     print(f"扫了 {len(offsets)} 个值，精度只出现了 {len(np.unique(accs))} 种：", np.unique(accs))
     print(f"损失出现了 {len(np.unique(np.round(losses, 6)))} 种，从 {losses.min():.4f} 到 {losses.max():.4f}")
     d_acc, d_loss = slopes_at_zero()
-    print("在原点的斜率：精度", d_acc, " 损失", round(d_loss, 5))
+    print("在原值处的斜率：精度", d_acc, " 损失", round(d_loss, 5))
 
 
 if __name__ == "__main__":

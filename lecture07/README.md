@@ -32,8 +32,8 @@ python memorizer.py
 - 背答案模型背下前 2000 张训练图：训练精度 1.0，测试精度 0.089。
 
 ## 依赖
-- 本讲 / common/functions.py：`cross_entropy_error`、`mean_squared_error`（本讲讲解的就是这两个函数，代码只放在 common 里，不在本目录重复定义）；第6讲 / common/functions.py：`softmax`。
-- 第6讲 / common/simple_net.py：`init_network`、`predict`（第6讲训练好的 784 → 50 → 100 → 10 网络和权重 lecture06/weights/）。
+- 本讲 / common/functions.py：`cross_entropy_error`、`mean_squared_error`（本讲讲解的就是这两个函数，代码只放在 common 里，不在本目录重复定义）。
+- 第6讲 / common/simple_net.py：`init_network`、`predict`（第6讲训练好的 784 → 50 → 100 → 10 网络和权重 lecture06/weights/；`predict` 内部会调用 softmax，本讲脚本不单独 import softmax）。
 - common/mnist.py：`load_mnist`。
 
 ## 和大纲的不同
