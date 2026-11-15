@@ -2,7 +2,7 @@
 
 后面的讲次复用前面已经写好的东西：前面讲里实现、后面还要用的函数和类都放在 common/，后面的讲次直接 import。
 本文件的依赖关系是用脚本扫描各讲 .py 里的 `from common... import` 和 `from lectureNN... import` 生成的（扫描时间 2026-11-15，14:25 鱼书对齐后重新扫描过），以实际 import 为准。
-第0讲到第8讲的部分是执行员C 按 import 扫出来的初稿，标「B 补充」的地方留给执行员B 补充说明。
+第0讲到第8讲的部分已按同样的方法逐文件核对（2026-11-15）。
 
 ## 依赖图
 
@@ -47,7 +47,7 @@ graph LR
   deep_convnet --> util
   deep_convnet --> gradient
 
-  %% 第0讲到第8讲（B 补充）
+  %% 第0讲到第8讲
   L00[第0讲]
   L01[第1讲] --> arrays
   L02[第2讲] --> mnist
@@ -98,11 +98,11 @@ graph LR
 
 | 模块 | 内容 | 首次出现 | 负责人 | 对应鱼书源码 |
 |---|---|---|---|---|
-| arrays.py | describe、matmul_steps | 第1讲 | B | B 补充 |
-| functions.py | identity、step_function、sigmoid、sigmoid_grad、relu、softmax、mean_squared_error、cross_entropy_error | 第5讲、第7讲 | B | B 补充 |
-| mnist.py | load_mnist（下载并缓存到 dataset/）、to_one_hot | 第2讲、第6讲 | B | B 补充 |
-| simple_net.py | init_network、predict（第6讲的推理网络） | 第6讲 | B | B 补充 |
-| gradient.py | numerical_diff、numerical_gradient、gradient_descent | 第8讲 | B | B 补充 |
+| arrays.py | describe、matmul_steps（`from common import describe, matmul_steps`，由 `__init__.py` 导出） | 第1讲 | B | 无（本仓库加的教学小工具） |
+| functions.py | identity_function（别名 identity）、step_function、sigmoid、sigmoid_grad、relu、relu_grad、softmax（第5、6讲）；sum_squared_error、mean_squared_error、cross_entropy_error、softmax_loss（第7讲） | 第5讲、第7讲 | B | common/functions.py |
+| mnist.py | load_mnist（下载并缓存到 dataset/）、to_one_hot、download_mnist、init_mnist | 第2讲、第6讲 | B | dataset/mnist.py（接口一致；缓存用 npz，不用 pickle） |
+| simple_net.py | init_network、predict（第6讲的 784 → 50 → 100 → 10 推理网络，内部 import functions 的 sigmoid、softmax） | 第6讲 | B | ch03/neuralnet_mnist.py 的 init_network、predict（权重换成本仓库训练的 lecture06/weights/mnist_784_50_100_10.npz，不用 sample_weight.pkl） |
+| gradient.py | numerical_diff、numerical_gradient_2d、numerical_gradient、gradient_descent | 第8讲 | B | common/gradient.py（numerical_diff、gradient_descent 在书中写在 ch04/gradient_1d.py、gradient_method.py 里） |
 | layers.py | MulLayer、AddLayer（第9讲）；Relu、Sigmoid、Affine、SoftmaxWithLoss（第10讲）；BatchNormalization、Dropout（第12讲）；Convolution、Pooling（第13、14讲） | 第9讲 | C | common/layers.py（MulLayer、AddLayer 对应 ch05/layer_naive.py） |
 | two_layer_net.py | TwoLayerNet（反向传播版，构造参数和键名与第8讲 NumericalTwoLayerNet 相同） | 第10讲 | C | ch05/two_layer_net.py |
 | optimizer.py | SGD、Momentum、Nesterov、AdaGrad、RMSprop、Adam、make_optimizer | 第11讲 | C | common/optimizer.py |
@@ -117,15 +117,15 @@ graph LR
 
 | 讲次 | 用到的前面模块（括号里是这些东西出自哪一讲） |
 |---|---|
-| 第0讲 | 无（只用 NumPy）。B 补充 |
-| 第1讲 | common/arrays.py 的 describe、matmul_steps（本讲新增）。B 补充 |
-| 第2讲 | common/mnist.py（读一张手写数字画图）。B 补充 |
-| 第3讲 | 无（只用 Pandas）。B 补充 |
-| 第4讲 | 无。B 补充 |
-| 第5讲 | common/arrays.py 的 matmul_steps（第1讲）；common/functions.py 的 step_function、sigmoid、relu（本讲新增）。B 补充 |
-| 第6讲 | common/functions.py 的 identity、sigmoid、softmax（第5讲及本讲）、cross_entropy_error；common/mnist.py 的 load_mnist；common/simple_net.py（本讲新增）。B 补充 |
-| 第7讲 | common/functions.py 的 cross_entropy_error、mean_squared_error（本讲新增）；common/mnist.py；common/simple_net.py 的 init_network、predict（第6讲）。B 补充 |
-| 第8讲 | common/functions.py 的 sigmoid、softmax、cross_entropy_error（第5、7讲）；common/gradient.py（本讲新增）；common/mnist.py。B 补充 |
+| 第0讲 | 无（pixel_seven.py、preview.py 只用 NumPy）。 |
+| 第1讲 | common/arrays.py 的 describe（numpy_arrays.py）、matmul_steps（matmul.py），本讲新增；其余脚本只用 NumPy。 |
+| 第2讲 | common/mnist.py（array_image.py 在函数里 `from common import mnist`，读一张手写数字画图）；其余画图脚本只用 NumPy 和 Matplotlib（共用本讲的 _plotting.py）。 |
+| 第3讲 | 无（iris_demo.py、training_log.py 只用 Pandas、NumPy、Matplotlib）。 |
+| 第4讲 | 无（各门电路脚本只用 NumPy，gates.py 是本讲内部共用的门电路）。 |
+| 第5讲 | common/functions.py 的 step_function、sigmoid、relu（本讲新增，activations.py、step_function.py、sigmoid.py、relu.py、sig_step_compare.py、plot_activations.py、why_nonlinear.py 都 import 它）；common/arrays.py 的 matmul_steps（第1讲，layer_dot.py）。 |
+| 第6讲 | common/functions.py 的 identity、sigmoid（第5讲，three_layer.py）、softmax（本讲新增，softmax_demo.py）、cross_entropy_error（train_weights.py）；common/mnist.py 的 load_mnist（neuralnet_mnist.py、neuralnet_mnist_batch.py、mnist_inference.py、train_weights.py）；common/simple_net.py 的 init_network、predict（本讲新增，三个推理脚本共用）。 |
+| 第7讲 | common/functions.py 的 sum_squared_error、mean_squared_error、cross_entropy_error（本讲新增，losses.py、minibatch.py、accuracy_vs_loss.py）；common/mnist.py 的 load_mnist（第6讲，memorizer.py、minibatch.py、accuracy_vs_loss.py）；common/simple_net.py 的 init_network、predict（第6讲，minibatch.py、accuracy_vs_loss.py 沿用第6讲的网络）。 |
+| 第8讲 | common/gradient.py（本讲新增：derivative.py、gradient_1d.py 用 numerical_diff，gradient_2d.py 用 numerical_gradient_2d，gradient_method.py、gradient_demo.py 用 gradient_descent，weight_gradient.py、gradient_simplenet.py、numerical_two_layer_net.py、two_layer_net.py 用 numerical_gradient）；common/functions.py 的 sigmoid（第5讲）、softmax（第6讲）、cross_entropy_error（第7讲）、sigmoid_grad；common/mnist.py 的 load_mnist（train_numerical.py、train_neuralnet.py）。讲内复用：train_numerical.py import 本讲的 numerical_two_layer_net.py，train_neuralnet.py import 本讲的 two_layer_net.py；第10讲的梯度确认又 import 了 lecture08/numerical_two_layer_net.py。 |
 | 第9讲 | common/gradient.py 的 numerical_diff、numerical_gradient（第8讲）；新增 common/layers.py 的 MulLayer、AddLayer |
 | 第10讲 | common/functions.py 的 sigmoid、softmax、cross_entropy_error（第5、7讲，经层内部调用）；common/gradient.py 的 numerical_gradient（第8讲）；lecture08/numerical_two_layer_net.py 的 NumericalTwoLayerNet（第8讲，梯度确认对照）；common/mnist.py（经 get_mnist）；新增 Relu、Sigmoid、Affine、SoftmaxWithLoss 和 TwoLayerNet |
 | 第11讲 | common/functions.py 的 sigmoid、relu（第5讲）；common/layers.py 的 Affine、Relu、Sigmoid、SoftmaxWithLoss（第10讲，经 MultiLayerNet）；common/gradient.py（第8讲）；新增 optimizer.py、MultiLayerNet |
@@ -133,6 +133,20 @@ graph LR
 | 第13讲 | 第10讲的层接口；提前用第14讲的 im2col、conv_output_size、Convolution、Pooling 核对朴素循环的结果 |
 | 第14讲 | common/layers.py 的 Affine、Relu、SoftmaxWithLoss（第10讲）；common/optimizer.py 的 Adam（第11讲）；common/trainer.py 的 Trainer（第12讲）；第13讲的卷积原理和示例数据；新增 im2col、col2im、Convolution、Pooling、SimpleConvNet |
 | 第15讲 | common/layers.py 的 Affine、Relu、SoftmaxWithLoss（第10讲）、Dropout（第12讲）、Convolution、Pooling（第13、14讲）；common/optimizer.py 的 Adam（第11讲）；common/trainer.py（第12讲）；common/util.py 的 im2col（第14讲）；新增 DeepConvNet |
+
+## 与鱼书源码的对应（第0讲到第8讲）
+
+| 讲次 | 对应鱼书 | 本仓库补充的脚本（书中没有对应源码文件） |
+|---|---|---|
+| 第0讲 | 无 | pixel_seven.py、preview.py |
+| 第1讲 | 第1章 ch01/man.py | python_basics.py、numpy_arrays.py、axis_sum.py、broadcasting.py、matmul.py、indexing.py |
+| 第2讲 | 第1章 ch01/sin_cos_graph.py | _plotting.py、array_image.py、loss_curve.py、sin_cos.py、subplots.py |
+| 第3讲 | 无（书中不讲 Pandas） | iris_demo.py、training_log.py |
+| 第4讲 | 第2章 ch02/and_gate.py、nand_gate.py、or_gate.py、xor_gate.py | gates.py、decision_lines.py、separability.py、xor_two_layer.py |
+| 第5讲 | 第3章 ch03/step_function.py、sigmoid.py、relu.py、sig_step_compare.py | activations.py、layer_dot.py、plot_activations.py、why_nonlinear.py |
+| 第6讲 | 第3章 ch03/neuralnet_mnist.py、neuralnet_mnist_batch.py | three_layer.py、softmax_demo.py、mnist_inference.py、train_weights.py（训练 lecture06/weights 里的权重，代替书中的 sample_weight.pkl） |
+| 第7讲 | 第4章 4.1 到 4.2 节（无单独源码文件，损失函数在 common/functions.py） | 全部 |
+| 第8讲 | 第4章 ch04/gradient_1d.py、gradient_2d.py、gradient_method.py、gradient_simplenet.py、two_layer_net.py、train_neuralnet.py | derivative.py、gradient_demo.py、weight_gradient.py、numerical_two_layer_net.py、train_numerical.py |
 
 ## 与鱼书源码的对应（第9讲到第15讲）
 
