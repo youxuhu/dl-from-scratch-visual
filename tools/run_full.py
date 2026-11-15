@@ -30,7 +30,20 @@ import traceback
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-DEFAULT_SCRIPTS_ROOT = REPO.parent.parent / "dl-video-p2" / "out"
+
+
+def _default_scripts_root():
+    """台词 JSON 根目录（制作仓库 dl-video-production 的 out/）：环境变量 DLVIS_SCRIPTS_ROOT（和 lib/dlvis/paths.py 同名），
+    否则找与代码仓库相邻的制作仓库；都没有时返回第一个候选，--check-keys 会报目录不存在。"""
+    env = os.environ.get("DLVIS_SCRIPTS_ROOT")
+    if env:
+        return Path(env)
+    cands = [REPO.parent / "dl-video-production" / "out", REPO.parent / "dl-video-p2" / "out",
+             REPO.parent.parent / "dl-video-p2" / "out"]
+    return next((c for c in cands if c.is_dir()), cands[0])
+
+
+DEFAULT_SCRIPTS_ROOT = _default_scripts_root()
 PLACEHOLDER = re.compile(r"【待填:([A-Za-z0-9_]+)】")
 
 
@@ -128,6 +141,11 @@ for _d, _f in FIGURE_SCRIPTS:
     TASKS[f"FIG_L{_d[-2:]}_{Path(_f).stem}"] = dict(
         dir=_d, script=_f, deps=[], keys=[], figure=True,
         desc=f"出图：重新生成 {_d}/{_f} 存到 {_d}/output/ 的图", scale=1)
+# apply_filter.py 用 visualize_filter.get_trained：有 lecture14/output/simple_convnet_params.pkl 就读，没有就当场训练。
+# 所以它依赖 L14_train，开跑前按 L14_filter 的规则核对 pkl 的 sha256，跑完核对输出里写的是「读取已保存的参数」。
+TASKS["FIG_L14_apply_filter"].update(
+    deps=["L14_train"],
+    desc="出图（要训练好的参数）：用 L14_train 存下的 W1 前 16 个滤波器作用在 MNIST 测试集第一张图上")
 TASKS["FIG_L08_train_neuralnet"]["desc"] = (
     "出图（要训练）：对齐鱼书 ch04 的 train_neuralnet，解析梯度 10000 步，只留 lecture08/output/train_neuralnet.png；"
     "第8讲视频不用它，不产键")
@@ -139,9 +157,12 @@ for _t, _s in TASKS.items():
     _s["est_min"] = EST_MIN.get(_t, 0.1 if _s.get("figure") else 1)
 # 确定性出图：不依赖训练，QUICK 和完整模式出图逐字节相同（2026-11-15 本机实测 sha256，见 README）。
 # 其余 FIG_* 任务（随机数/QUICK 会改变图）只在正式 run_full 里跑，不进 --figures-only。
-# 实测：下面 21 个在 QUICK、完整模式各跑一次（完整模式跑两次），25 张 png 的 sha256 三次全部相同。
-# FIG_L08_train_neuralnet 要训练 10000 步（QUICK 只 20 步），图随模式变，不算确定性出图。
-STATIC_FIGS = {f"FIG_L{_d[-2:]}_{Path(_f).stem}" for _d, _f in FIGURE_SCRIPTS} - {"FIG_L08_train_neuralnet"}
+# 实测：下面 20 个在移走全部 pkl 的新克隆里，QUICK 跑一次、完整模式跑两次，png 的 sha256 全部相同；
+# 逐个读过脚本：只用 numpy/matplotlib、common 里的函数、仓库里提交的数据（lecture03/data/*.csv）和 MNIST 原始数据，
+# 不读 pkl、不读训练结果、缺文件时也不会自己训练。
+# 不算确定性出图的：FIG_L08_train_neuralnet（要训练 10000 步，QUICK 只 20 步）、FIG_L14_apply_filter（要 L14_train 的参数）。
+STATIC_FIGS = ({f"FIG_L{_d[-2:]}_{Path(_f).stem}" for _d, _f in FIGURE_SCRIPTS}
+               - {"FIG_L08_train_neuralnet", "FIG_L14_apply_filter"})
 for _t in STATIC_FIGS:
     TASKS[_t]["figure"] = "static"
 
@@ -390,6 +411,11 @@ def ex_L14_filter(text, calls, trainers, np):
     return {"L14_filter_roughness_before": float(before.mean()), "L14_filter_roughness_after": float(after.mean())}
 
 
+def ex_FIG_L14_apply(text, calls, trainers, np):
+    _need_saved_params(text, "参数：读取已保存的参数")
+    return {}
+
+
 def ex_L15_train(text, calls, trainers, np):
     return _trainer_curves("L15", text, trainers)
 
@@ -410,7 +436,7 @@ def ex_L15_half(text, calls, trainers, np):
             "L15_fp16_acc": _grab(text, r"16 位浮点数：精度 ([0-9.]+)")}
 
 
-EXTRACT = {"L06_inference": ex_L06, "L08_numerical": ex_L08_num,
+EXTRACT = {"FIG_L14_apply_filter": ex_FIG_L14_apply, "L06_inference": ex_L06, "L08_numerical": ex_L08_num,
            "L10_train": ex_L10, "L11_optimizer": ex_L11_opt, "L11_weight_init": ex_L11_init,
            "L12_batchnorm": ex_L12_bn, "L12_weight_decay": ex_L12_wd, "L12_dropout": ex_L12_drop,
            "L12_hparam": ex_L12_hp, "L14_train": ex_L14_train, "L14_filter": ex_L14_filter,
@@ -634,8 +660,17 @@ def check_images(root, results):
         ok = exists and gens and rec and same and rec["mode"] == "full"
         bad += not ok
         users = "、".join(sorted({f"{a}/{b}" for a, b, _ in where}))
+        kinds = []
+        for g in gens:
+            if TASKS[g].get("figure") == "static":
+                kinds.append(f"{g} 是确定性出图（--figures-only 就能生成）")
+            elif TASKS[g]["deps"]:
+                kinds.append(f"{g} 要等 {'、'.join(TASKS[g]['deps'])} 跑完（读它存下的参数）")
+            else:
+                kinds.append(f"{g} 要训练（完整 run_full 里跑）")
         print(f"  {'OK ' if ok else '-- '}{rel}\n      引用：{users}；存在：{'是' if exists else '否'}；"
-              f"生成任务：{'、'.join(gens) or '找不到'}；来源：{origin}")
+              f"生成任务：{'、'.join(gens) or '找不到'}；来源：{origin}"
+              + (f"\n      类别：{'；'.join(kinds)}" if kinds else ""))
     print(f"{len(imgs) - bad} 张已由完整模式生成且未被改动，{bad} 张还不是（台式机跑完 run_full 后应为 0）")
     return 1 if bad else 0
 
@@ -681,6 +716,8 @@ def main(argv=None):
     if results.get("meta", {}).get("mode") and results["meta"]["mode"] != ("quick" if args.quick else "full"):
         raise SystemExit(f"{results_path} 里是 {results['meta']['mode']} 模式的结果，不和本次混写；换 --results-dir")
 
+    if (args.check_keys or args.check_images) and not Path(args.scripts_root).is_dir():
+        raise SystemExit(f"台词目录 {args.scripts_root} 不存在：用 --scripts-root 或环境变量 DLVIS_SCRIPTS_ROOT 指向制作仓库的 out/")
     if args.check_keys:
         return check_keys(args.scripts_root, results)
     if args.check_images:

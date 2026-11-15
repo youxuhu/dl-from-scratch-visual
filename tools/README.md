@@ -35,14 +35,15 @@ python tools/run_full.py -v              # 把各脚本的输出同时打到屏�
 
 - **断点续跑：** 每个任务跑完就把结果原子写入 `results/full_results.json`（先写临时文件再 rename）。中途关机或 Ctrl+C 后直接重跑同一条命令，已完成的任务会跳过。
 - **日志：** 每个任务一份，存在 `results/logs/<任务>.log`（utf-8）。日志开头记录开始时间、模式、线程数、仓库提交号、Python/NumPy 版本和机器信息，中间是脚本的全部 stdout+stderr，结尾是结束时间和用时。
-- **依赖：** `L14_filter` 依赖 `L14_train`；`L15_misclassified` 和 `L15_half_float` 依赖 `L15_train`。训练任务会记下参数文件（`lecture14/output/simple_convnet_params.pkl`、`lecture15/output/deep_convnet_params.pkl`）的 sha256。依赖它的任务开跑前会核对：文件被别的运行覆盖过（比如之后又跑了 `--quick`），就拒绝运行，提示先重跑训练任务。
+- **依赖：** `L14_filter` 和 `FIG_L14_apply_filter` 依赖 `L14_train`；`L15_misclassified` 和 `L15_half_float` 依赖 `L15_train`。训练任务会记下参数文件（`lecture14/output/simple_convnet_params.pkl`、`lecture15/output/deep_convnet_params.pkl`）的 sha256。依赖它的任务开跑前会核对：文件被别的运行覆盖过（比如之后又跑了 `--quick`），就拒绝运行，提示先重跑训练任务。
 - **并行（`--jobs N`）：** 主进程开 N 个子进程同时跑任务，每个子进程的线程数默认是 `总核数 // N`（至少 1），`--threads` 可覆盖。依赖照样遵守：`L14_filter` 等 `L14_train` 跑完，`L15_misclassified`、`L15_half_float` 等 `L15_train` 跑完（会出 `filters.png`、`misclassified.png` 这类依赖参数的图的，就是这几个任务）。可开跑的任务按预计用时从长到短启动，所以 `L15_train` 总是第一个开。`full_results.json` 只由主进程写（子进程把结果交给主进程），不会并发覆盖。一个任务失败只影响依赖它的任务，其它照跑，最后汇总成功、失败各几个。
   - 选 N：L15_train 一个任务就要 3 小时左右，总时长基本由它决定。建议 N = 3 或 4：L15_train 自己留一半核左右，其余任务在别的子进程里跑完。N 太大时每个子进程线程太少，L15_train 反而变慢。
-- **出图任务（`FIG_*`）：** 各讲 `output/` 下的图，按生成脚本一个脚本一个任务，共 22 个。完整模式下全部重跑，让每张图都来自当前代码。训练任务自己出的图（`optimizer_mnist.png`、`filters.png`、`misclassified.png`）随训练任务一起生成，不再单列。
-  - **确定性出图（21 个）：** 不依赖训练，`--figures-only` 只跑这些。2026-11-15 在本机实测：QUICK 跑一次、完整模式跑两次，25 张 png 的 sha256 三次完全一致，所以台式机上跑出来的和这里一样。它们是：lecture02 的 array_image、loss_curve、sin_cos、sin_cos_graph、subplots；lecture03 的 training_log；lecture04 的 decision_lines；lecture05 的 plot_activations、relu、sig_step_compare、sigmoid、step_function；lecture07 的 cross_entropy_curve；lecture08 的 gradient_1d、gradient_2d、gradient_demo、gradient_method；lecture11 的 optimizer_compare_naive、weight_init_activation_histogram；lecture14 的 apply_filter；lecture15 的 data_augmentation。
-    - 注意：array_image、apply_filter、data_augmentation 要读 MNIST，第一次跑会先下载。
+- **出图任务（`FIG_*`）：** 各讲 `output/` 下的图，按生成脚本一个脚本一个任务，共 22 个（20 个确定性、1 个依赖训练参数、1 个自己训练）。完整模式下全部重跑，让每张图都来自当前代码。训练任务自己出的图（`optimizer_mnist.png`、`filters.png`、`misclassified.png`）随训练任务一起生成，不再单列。
+  - **确定性出图（20 个）：** 不依赖训练，`--figures-only` 只跑这些。逐个读过脚本：只用 numpy、matplotlib、common 里的函数、仓库里提交的数据（lecture03/data/*.csv）和 MNIST 原始数据，不读 pkl、不读训练结果，缺文件时也不会自己训练。2026-11-15 在移走全部 pkl 的新克隆里实测：QUICK 跑一次、完整模式跑两次，png 的 sha256 全部一致，所以台式机上跑出来的和这里一样。它们是：lecture02 的 array_image、loss_curve、sin_cos、sin_cos_graph、subplots；lecture03 的 training_log；lecture04 的 decision_lines；lecture05 的 plot_activations、relu、sig_step_compare、sigmoid、step_function；lecture07 的 cross_entropy_curve；lecture08 的 gradient_1d、gradient_2d、gradient_demo、gradient_method；lecture11 的 optimizer_compare_naive、weight_init_activation_histogram；lecture15 的 data_augmentation。
+    - 注意：array_image、data_augmentation 要读 MNIST，第一次跑会先下载。
+  - **要等训练参数的出图（1 个）：** `FIG_L14_apply_filter` 依赖 `L14_train`。apply_filter.py 有 `lecture14/output/simple_convnet_params.pkl` 就读，没有就当场训练一小会儿，结果不确定，所以不进 `--figures-only`。开跑前按 `L14_filter` 的规则核对 pkl 的 sha256，跑完核对输出写的是「读取已保存的参数」，否则判失败。
   - **要训练的出图（1 个）：** `FIG_L08_train_neuralnet` 对齐鱼书 ch04 的 train_neuralnet.py，用解析梯度跑 10000 步，约 1 分钟，只留下 `lecture08/output/train_neuralnet.png`。QUICK 只跑 20 步，图会变，所以不进 `--figures-only`。第8讲视频不用它，也不产键。
-- **产物记录：** 每个任务跑完，把它在本讲 `output/` 里写过的文件都记进 `full_results.json` 的 `artifacts`，每个文件记 sha256、生成任务、脚本、模式和时间。产物按子进程实际以写方式打开过的文件来认，所以并行时也不会记错。`--check-images` 就靠这张表判断一张图是不是完整模式生成的、之后有没有被改过。
+- **产物记录：** 每个任务跑完，把它在本讲 `output/` 里写过的文件都记进 `full_results.json` 的 `artifacts`，每个文件记 sha256、生成任务、脚本、模式和时间。产物按子进程实际以写方式打开过的文件来认，所以并行时也不会记错。`--check-images` 就靠这张表判断一张图是不是完整模式生成的、之后有没有被改过，并写出生成它的任务属于哪一类：确定性出图（`--figures-only` 就能生成）、要等训练参数、或者要训练。
   - `lecture08/output/train_log.json` 由 `L08_numerical`（train_numerical.py 不开 QUICK）重新生成，也记在这张表里。
   - `lecture08/results/train_log.json` 是已提交的一次完整运行记录，loss 保留 5 位小数。没有脚本会写 `results/`，run_full 也不碰它。
 - **数据检查：** 完整模式下如果 MNIST 下载失败、脚本换成了合成数据，该任务记为失败，不写结果。
@@ -73,10 +74,18 @@ DeepConvNet 这类卷积网络受 CPU 影响最大。
 | L15_misclassified | lecture15/misclassified_mnist.py（10000 张推理） | 1.8 秒 | 约 1 分钟 |
 | L15_half_float | lecture15/half_float_network.py（64 位、16 位各推理 10000 张） | 2.0 秒 | 约 1 到 2 分钟 |
 | FIG_L08_train_neuralnet | lecture08/train_neuralnet.py（解析梯度 10000 步，只出图） | 1.3 秒 | 约 1 分钟 |
-| 21 个确定性出图任务 | 见上文 | 共约 10 秒（--jobs 4 约 4 秒） | 同左（和 QUICK 完全一样） |
+| 20 个确定性出图任务 | 见上文 | 共约 10 秒（--jobs 4 约 4 秒） | 同左（和 QUICK 完全一样） |
+| FIG_L14_apply_filter | lecture14/apply_filter.py（读 L14_train 的参数） | 1 秒 | 几秒（排在 L14_train 之后） |
 | **合计** | | **串行约 80 秒，--jobs 4 约 26 秒** | **串行约 3.5 到 4.5 小时；--jobs 3~4 时约等于 L15_train 一个任务的时间（约 3 小时）** |
 
 不想并行时，也可以分批跑：先 `--only L06 L08 L10 L11 L12`（半小时内跑完），再 `--only L14`，最后 `--only L15`。
+
+### 路径和环境变量（Windows 台式机也一样）
+
+- 代码仓库自己的路径都按 `tools/run_full.py` 的位置推导，不写死目录。
+- `--check-keys`、`--check-images` 要读制作仓库 dl-video-production 的 `out/*/scripts/*.json`：
+  - 先看环境变量 `DLVIS_SCRIPTS_ROOT`，否则找与代码仓库并排的 `../dl-video-production/out`，也可以用 `--scripts-root` 指定。
+- 制作仓库的生成器（out/C/gen_L*.py）用环境变量 `DLVIS_REPO` 找代码仓库，没有就找并排的 `../dl-from-scratch-visual`。
 
 ### 键的说明
 
