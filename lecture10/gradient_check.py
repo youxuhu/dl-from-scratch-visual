@@ -1,4 +1,9 @@
-"""第10讲：梯度确认。第8讲的数值梯度版和本讲的反向传播版，用同一组参数、同一批数据求梯度，逐格比较。
+"""第10讲：梯度确认。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch05/gradient_check.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。变量名 x_batch、t_batch、grad_numerical、grad_backprop 和
+「逐个参数打印平均绝对误差」的做法与原书一致；另加了耗时对比，并改用第8讲的数值梯度版网络。
+第8讲的数值梯度版和本讲的反向传播版，用同一组参数、同一批数据求梯度，逐格比较。
 
 做法：同一个 seed 构造第8讲的 NumericalTwoLayerNet 和 common 里的 TwoLayerNet（隐藏层和第8讲一样用 sigmoid），
 把前者的参数拷给后者，
@@ -37,21 +42,25 @@ def make_pair(seed=0, sizes=(784, 50, 10)):
 def check(x_batch, t_batch, seed=0, sizes=(784, 50, 10)):
     num_net, bp_net, source = make_pair(seed, sizes)
     start = time.perf_counter()
-    numeric = num_net.numerical_gradient(x_batch, t_batch)
+    grad_numerical = num_net.numerical_gradient(x_batch, t_batch)
     t_num = time.perf_counter() - start
     start = time.perf_counter()
-    backprop = bp_net.gradient(x_batch, t_batch)
+    grad_backprop = bp_net.gradient(x_batch, t_batch)
     t_bp = time.perf_counter() - start
-    diffs = {k: float(np.mean(np.abs(backprop[k] - numeric[k]))) for k in numeric}
+    # 各参数的平均绝对误差
+    diffs = {key: float(np.average(np.abs(grad_backprop[key] - grad_numerical[key])))
+             for key in grad_numerical}
     return diffs, t_num, t_bp, source
 
 
 def main():
     (x_train, t_train), _, data_source = get_mnist(train_limit=3)
-    diffs, t_num, t_bp, source = check(x_train[:3].astype(float), t_train[:3])
+    x_batch = x_train[:3].astype(float)
+    t_batch = t_train[:3]
+    diffs, t_num, t_bp, source = check(x_batch, t_batch)
     print(f"数据：{data_source} 前 3 张；数值梯度来自 {source}")
-    for k, v in diffs.items():
-        print(f"{k}: 平均绝对误差 {v:.1e}")
+    for key, diff in diffs.items():
+        print(f"{key}: 平均绝对误差 {diff:.1e}")
     print(f"数值梯度耗时 {t_num:.3f} 秒，反向传播耗时 {t_bp * 1000:.3f} 毫秒，约快 {t_num / t_bp:.0f} 倍")
 
 

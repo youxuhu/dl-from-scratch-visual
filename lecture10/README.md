@@ -5,15 +5,17 @@
 
 各层的实现在 common/layers.py（Relu、Sigmoid、Affine、SoftmaxWithLoss），TwoLayerNet 在 common/two_layer_net.py，第11讲以后直接导入。
 
+对应鱼书：第5章 ch05/two_layer_net.py、ch05/gradient_check.py、ch05/train_neuralnet.py（第5章 5.5到5.7节；各层对应 common/layers.py）
+
 ## 文件
 | 文件 | 内容 |
 |---|---|
-| activation_layers.py | ReLU 的 mask 与正反向；Sigmoid 拆成四个节点逐步回传，并和化简公式对照 |
-| affine_layer.py | Affine 层的形状、Wᵀ、单样本与批版本的反向，偏置梯度沿批方向求和 |
-| softmax_loss_grad.py | 预测很差和预测很准的两个样本，各自的 y - t |
-| two_layer_net_bp.py | 打印 common/two_layer_net.py 里 TwoLayerNet 的层顺序和参数形状（OrderedDict 保存层，predict、loss、accuracy、numerical_gradient、gradient），并找到第8讲的数值梯度版做对照 |
-| gradient_check.py | 梯度确认：第8讲 NumericalTwoLayerNet 的数值梯度 vs 本讲 TwoLayerNet 的反向传播梯度（同一 seed、拷贝参数），MNIST 前 3 张，平均绝对误差和耗时对比 |
-| train_neuralnet.py | 用反向传播训练 TwoLayerNet（支持 QUICK=1） |
+| activation_layers.py | 本仓库补充（书中 5.5 节的讲解，没有单独源码文件）。ReLU 的 mask 与正反向；Sigmoid 拆成四个节点逐步回传，并和化简公式对照 |
+| affine_layer.py | 本仓库补充（书中 5.6.1、5.6.2 节）。Affine 层的形状、Wᵀ、单样本与批版本的反向，偏置梯度沿批方向求和 |
+| softmax_loss_grad.py | 本仓库补充（书中 5.6.3 节）。预测很差和预测很准的两个样本，各自的 y - t |
+| two_layer_net.py | 对应书中 ch05/two_layer_net.py，类本身放在 common/two_layer_net.py 以便后面各讲导入。这里打印 common/two_layer_net.py 里 TwoLayerNet 的层顺序和参数形状（OrderedDict 保存层，predict、loss、accuracy、numerical_gradient、gradient），并找到第8讲的数值梯度版做对照 |
+| gradient_check.py | 改编自书中同名文件（变量名和逐参数打印误差的做法一致）。梯度确认：第8讲 NumericalTwoLayerNet 的数值梯度 vs 本讲 TwoLayerNet 的反向传播梯度（同一 seed、拷贝参数），MNIST 前 3 张，平均绝对误差和耗时对比 |
+| train_neuralnet.py | 改编自书中同名文件（变量名和流程一致）。用反向传播训练 TwoLayerNet（支持 QUICK=1） |
 
 ### 依赖
 - 第5讲、第7讲：common/functions.py 的 sigmoid、softmax、cross_entropy_error（Sigmoid、SoftmaxWithLoss 层内部调用）。
@@ -28,6 +30,7 @@ cd lecture10
 python activation_layers.py
 python affine_layer.py
 python softmax_loss_grad.py
+python two_layer_net.py
 python gradient_check.py
 QUICK=1 python train_neuralnet.py   # 只跑 300 步，几秒钟
 python train_neuralnet.py           # 完整训练：10000 步，批大小 100，学习率 0.1

@@ -1,6 +1,7 @@
 """第10讲：反向传播版 TwoLayerNet 的结构。
 
-类本身在 common/two_layer_net.py；这里打印层的顺序和参数形状，
+对应《深度学习入门：基于Python的理论与实现》官方源码 ch05/two_layer_net.py（MIT 许可，Copyright (c) 2016 Koki Saitoh）。
+类本身在 common/two_layer_net.py（第11讲以后也要导入，所以放在 common）；这里打印层的顺序和参数形状，
 并说明它和第8讲的数值梯度版 NumericalTwoLayerNet 接口相同、只是求梯度的方法不同。
 """
 import sys
