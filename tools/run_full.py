@@ -32,15 +32,40 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 
 
+PROD_REPO_CANDS = [REPO.parent / "dl-video-production", REPO.parent / "dl-video-p2", REPO.parent.parent / "dl-video-p2"]
+
+
 def _default_scripts_root():
-    """台词 JSON 根目录（制作仓库 dl-video-production 的 out/）：环境变量 DLVIS_SCRIPTS_ROOT（和 lib/dlvis/paths.py 同名），
-    否则找与代码仓库相邻的制作仓库；都没有时返回第一个候选，--check-keys 会报目录不存在。"""
+    """台词 JSON 根目录（制作仓库 dl-video-production 的 out/，下面是 A/B/C/scripts/*.json）。
+    1. 环境变量 DLVIS_SCRIPTS_ROOT；
+    2. 找与代码仓库相邻的制作仓库，用它的 lib/dlvis/paths.py 的 scripts_root() 推导（与 A 的出片工具同一套规则）；
+    都没有就返回 None，--check-keys/--check-images 会报清楚的错，不会静默扫空目录。"""
     env = os.environ.get("DLVIS_SCRIPTS_ROOT")
     if env:
         return Path(env)
-    cands = [REPO.parent / "dl-video-production" / "out", REPO.parent / "dl-video-p2" / "out",
-             REPO.parent.parent / "dl-video-p2" / "out"]
-    return next((c for c in cands if c.is_dir()), cands[0])
+    for prod in PROD_REPO_CANDS:
+        pf = prod / "lib" / "dlvis" / "paths.py"
+        if pf.is_file():
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("_dlvis_paths", pf)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return Path(mod.scripts_root())
+    return None
+
+
+def _require_scripts_root(root):
+    if root is None:
+        raise SystemExit("找不到台词目录：没设环境变量 DLVIS_SCRIPTS_ROOT，代码仓库旁边也没有制作仓库 "
+                         f"（试过 {', '.join(str(c) for c in PROD_REPO_CANDS)}）。"
+                         "请设 DLVIS_SCRIPTS_ROOT=<dl-video-production>/out，或用 --scripts-root 指定。")
+    root = Path(root)
+    if not root.is_dir():
+        raise SystemExit(f"台词目录 {root} 不存在：用 --scripts-root 或环境变量 DLVIS_SCRIPTS_ROOT 指向制作仓库的 out/")
+    if not any(root.glob("*/scripts/*.json")):
+        raise SystemExit(f"台词目录 {root} 下没有 */scripts/*.json，路径可能指错了（应是制作仓库的 out/）")
+    print(f"台词目录：{root.resolve()}")
+    return root
 
 
 DEFAULT_SCRIPTS_ROOT = _default_scripts_root()
@@ -688,7 +713,7 @@ def main(argv=None):
                    help="只跑确定性的出图任务（不依赖训练、QUICK 与完整模式出图逐字节相同），几秒跑完")
     p.add_argument("--no-figures", action="store_true", help="跳过所有 FIG_* 出图任务")
     p.add_argument("--scripts-root", type=Path, default=DEFAULT_SCRIPTS_ROOT,
-                   help=f"台词 JSON 的根目录（下面是 A/B/C/scripts/*.json），默认 {DEFAULT_SCRIPTS_ROOT}")
+                   help=f"台词 JSON 的根目录（下面是 A/B/C/scripts/*.json），默认 DLVIS_SCRIPTS_ROOT，否则相邻制作仓库 lib/dlvis/paths.py 推导（本机：{DEFAULT_SCRIPTS_ROOT}）")
     p.add_argument("--results-dir", type=Path, default=None, help="结果目录，默认 results/（--quick 时 results_quick/）")
     p.add_argument("--jobs", "-j", type=int, default=1, help="同时跑几个任务（子进程），默认 1；依赖照样遵守，最久的先开")
     p.add_argument("--threads", type=int, default=None,
@@ -716,8 +741,8 @@ def main(argv=None):
     if results.get("meta", {}).get("mode") and results["meta"]["mode"] != ("quick" if args.quick else "full"):
         raise SystemExit(f"{results_path} 里是 {results['meta']['mode']} 模式的结果，不和本次混写；换 --results-dir")
 
-    if (args.check_keys or args.check_images) and not Path(args.scripts_root).is_dir():
-        raise SystemExit(f"台词目录 {args.scripts_root} 不存在：用 --scripts-root 或环境变量 DLVIS_SCRIPTS_ROOT 指向制作仓库的 out/")
+    if args.check_keys or args.check_images:
+        args.scripts_root = _require_scripts_root(args.scripts_root)
     if args.check_keys:
         return check_keys(args.scripts_root, results)
     if args.check_images:
