@@ -2,9 +2,9 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from layer_naive import AddLayer, MulLayer  # noqa: E402
+from common.layers import AddLayer, MulLayer  # noqa: E402
 
 apple, apple_num = 100, 2
 orange, orange_num = 150, 3

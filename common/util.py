@@ -9,6 +9,22 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
 
+def get_pyplot(out_dir):
+    """有 matplotlib 就返回 pyplot（Agg 后端，不弹窗口）并建好输出目录；没装就返回 None。
+
+    各讲的画图都是可选的：没有 matplotlib 时只打印数值，不影响运行。
+    """
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("提示：没装 matplotlib，跳过画图。")
+        return None
+    os.makedirs(out_dir, exist_ok=True)
+    return plt
+
+
 def is_quick():
     """环境变量 QUICK=1 时返回 True，训练脚本据此只跑很少的步数。"""
     return os.environ.get("QUICK", "") not in ("", "0")

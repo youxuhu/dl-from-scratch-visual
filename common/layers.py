@@ -10,6 +10,31 @@ from common.functions import cross_entropy_error, sigmoid, softmax
 from common.util import col2im, im2col
 
 
+class MulLayer:
+    """乘法层 z = x * y（第9讲）。反向时把两个输入「翻转」：dx = dout * y，dy = dout * x。"""
+
+    def __init__(self):
+        self.x = None
+        self.y = None
+
+    def forward(self, x, y):
+        self.x, self.y = x, y
+        return x * y
+
+    def backward(self, dout):
+        return dout * self.y, dout * self.x
+
+
+class AddLayer:
+    """加法层 z = x + y（第9讲）。两个局部导数都是 1，上游梯度原样分给两边。"""
+
+    def forward(self, x, y):
+        return x + y
+
+    def backward(self, dout):
+        return dout * 1, dout * 1
+
+
 class Relu:
     """ReLU 层：正向把 x<=0 的位置变 0，反向在同样的位置把梯度挡成 0。"""
 
