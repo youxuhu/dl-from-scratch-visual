@@ -81,4 +81,5 @@ DeepConvNet 这类卷积网络受 CPU 影响最大。
 ### 键的说明
 
 - **`L08_numgrad_full_seconds`：** 不开 QUICK 跑 lecture08/train_numerical.py 时，最后一行「原尺寸 784 → 50 → 10 有 N 个参数，算一次数值梯度估计要 X 秒」里的 X，按打印的一位小数取。注意这是估计值：脚本抽样一部分参数计时，再按参数总数放大。同一行的 N 存成 `L08_full_grad_params`。
+- **`L08_num_seconds`（必填键）：** 不开 QUICK 跑 train_numerical.py 时打印的「训练 1500 步（49 → 20 → 10，…），用时 X 秒」里的 X，即 1500 步数值梯度训练的实测总耗时，一位小数。已提交的 lecture08/results/train_log.json 里那次是 289.2 秒。它和 `L08_numgrad_full_seconds` 都是必填键，`--check-keys` 会单列这两个必填键；台词里暂时没有它的占位符时只做提示，不算缺。
 - **精度类的键（`*_acc`）：** 存的是 0 到 1 的小数（如 0.9734）。填进台词时一律念成百分数（「百分之九十七点三」），不要念小数。

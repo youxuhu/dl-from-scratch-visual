@@ -145,6 +145,9 @@ STATIC_FIGS = {f"FIG_L{_d[-2:]}_{Path(_f).stem}" for _d, _f in FIGURE_SCRIPTS} -
 for _t in STATIC_FIGS:
     TASKS[_t]["figure"] = "static"
 
+# 主控定的必填键：台词里即使暂时还没有占位符，台式机也必须产出。--check-keys 单列，不因台词未引用而报错
+REQUIRED_KEYS = {"L08_num_seconds", "L08_numgrad_full_seconds"}
+
 PARAM_FILES = {"L14_train": "lecture14/output/simple_convnet_params.pkl",
                "L15_train": "lecture15/output/deep_convnet_params.pkl"}
 
@@ -272,7 +275,13 @@ def ex_L08_num(text, calls, trainers, np):
     _, _, (net, log) = calls["train"][-1]
     r = {"L08_num_loss_curve": _floats(log["loss"]), "L08_num_train_acc_curve": _floats(log["train_acc"]),
          "L08_num_test_acc_curve": _floats(log["test_acc"]), "L08_num_final_train_acc": float(log["final_train_acc"]),
-         "L08_num_final_test_acc": float(log["final_test_acc"]), "L08_num_seconds": float(log["seconds"])}
+         "L08_num_final_test_acc": float(log["final_test_acc"])}
+    # 预留键（主控未定用不用）：照脚本打印的「训练 1500 步（…），用时 X 秒」取 X，一位小数，就是 1500 步训练的实测总耗时
+    m = re.findall(r"训练 (\d+) 步（[^）]*），用时 ([0-9.]+) 秒", text)
+    if not m:
+        raise RuntimeError("输出里找不到「训练 N 步（…），用时 X 秒」这一行")
+    r["L08_num_seconds"] = float(m[-1][1])
+    assert abs(r["L08_num_seconds"] - float(log["seconds"])) < 0.06
     if calls["time_full_size_gradient"]:
         n_total, est = calls["time_full_size_gradient"][-1][2]
         # 照脚本最后一行「原尺寸 784 → 50 → 10 有 N 个参数，算一次数值梯度估计要 X 秒」取 N 和 X（X 按打印的一位小数）
@@ -572,7 +581,13 @@ def check_keys(root, results):
         state = produced.get(key, "缺：没有任务产出")
         val = "已有值" if key in results.get("values", {}) and results["values"][key] is not None else "还没值"
         print(f"  {key:32s} {owner:28s} {state:22s} {val if key in produced else ''}")
-    unused = sorted(k for k in produced if k not in found)
+    for key in sorted(REQUIRED_KEYS):
+        val = "已有值" if results.get("values", {}).get(key) is not None else "还没值"
+        note = "" if key in found else "（台词里还没有这个占位符，等台词加上）"
+        print(f"  必填 {key:27s} {produced.get(key, '缺：没有任务产出'):22s} {val}{note}")
+        if key not in produced:
+            missing[key] = []
+    unused = sorted(k for k in produced if k not in found and k not in REQUIRED_KEYS)
     print(f"缺 {len(missing)} 个键" + ("：" + "、".join(sorted(missing)) if missing else ""))
     print(f"run_full 额外产出、台词里暂未引用的键 {len(unused)} 个（可供其他执行员对齐）：" + "、".join(unused))
     return 1 if missing else 0
