@@ -1,5 +1,7 @@
 # 第8讲 神经网络的学习（下）：数值微分、梯度与学习算法
 
+对应鱼书：第4章 ch04/gradient_1d.py、gradient_2d.py、gradient_method.py、gradient_simplenet.py、two_layer_net.py、train_neuralnet.py
+
 ## 这讲讲什么
 导数和数值微分（前向差分的误差、中心差分、h 太小会被舍入成 0）；偏导数和梯度；梯度指向函数值增加最快的方向，沿负梯度走就是梯度下降；学习率太大发散、太小不动；神经网络的梯度（损失对权重矩阵每一格的偏导）；2 层神经网络 NumericalTwoLayerNet 的类，mini-batch 训练，每个 epoch 用训练集和测试集评价。最后实测数值梯度有多慢，引出第9、10讲的反向传播。
 
@@ -12,6 +14,12 @@
 | gradient_demo.py | f(x0, x1) = x0² + 2·x1² 的偏导、负梯度箭头、三种学习率的梯度下降，存图到 output/ |
 | weight_gradient.py | 2×3 权重的小网络 SimpleNet：数值梯度 dW、走一步后损失下降 |
 | train_numerical.py | 用数值梯度真的训练 NumericalTwoLayerNet（MNIST 缩成 7×7），并估算原尺寸网络算一次数值梯度的耗时 |
+| gradient_1d.py | 对齐鱼书：f(x)=0.01x²+0.1x，在 x=5 处求导 |
+| gradient_2d.py | 对齐鱼书：f=x0²+x1² 的梯度场 |
+| gradient_method.py | 对齐鱼书：从 (-3, 4) 出发、lr=0.1、20 步的梯度下降 |
+| gradient_simplenet.py | 对齐鱼书：类名 simpleNet |
+| two_layer_net.py | 对齐鱼书 ch04 的 TwoLayerNet（predict 返回 softmax；和第10讲的 common/two_layer_net.py 不是同一个文件） |
+| train_neuralnet.py | 对齐鱼书：用解析梯度训练 784→50→10，QUICK=1 时只跑 20 步 |
 | results/train_log.json | 完整训练一次的真实记录（每步 loss、每个 epoch 的训练/测试精度），视频里的曲线用它驱动 |
 
 ### NumericalTwoLayerNet 接口（第10讲依赖，不要随便改）
@@ -32,8 +40,14 @@ cd lecture08
 python derivative.py
 python gradient_demo.py
 python weight_gradient.py
+python gradient_1d.py
+python gradient_2d.py
+python gradient_method.py
+python gradient_simplenet.py
 QUICK=1 python train_numerical.py   # 只训练 20 步，约 5 秒
 python train_numerical.py           # 完整训练 1500 步，约 5 分钟，另外估算原尺寸网络的梯度耗时
+QUICK=1 python train_neuralnet.py   # 解析梯度版，只跑 20 步
+python train_neuralnet.py           # 对齐鱼书，完整训练 10000 步
 ```
 
 ## 视频里出现的数值
@@ -51,6 +65,10 @@ python train_numerical.py           # 完整训练 1500 步，约 5 分钟，另
 - 数值梯度训练（实测，results/train_log.json）：MNIST 缩成 7×7，49 → 20 → 10 共 1210 个参数，训练集前 10000 张，batch 100，lr 2.0，weight_init_std 0.1，种子 8，1500 步 = 15 个 epoch，用时 289 秒（每步约 0.19 秒）。
   - loss 从 2.26 左右下降，全程最低 0.1399，后半段大致在 0.14 到 0.52 之间波动。
   - 训练 / 测试精度：epoch 1 是 0.6673 / 0.6516，epoch 5 是 0.8691 / 0.8617，epoch 10 是 0.8857 / 0.8815，epoch 15 是 0.8994 / 0.8983。两条线几乎重合，没有过拟合。
+- 鱼书同名脚本里的数值（和上面自定义例子并存）：
+  - f(x)=0.01x²+0.1x，f(5)=0.75，数值导数约 0.2（解析值正好是 0.2）。
+  - f=x0²+x1² 在 (3, 4) 处梯度 (6, 8)。
+  - 从 (-3, 4) 出发、lr=0.1、20 步：第 1 步到 (-2.4, 3.2)，终点约 (-0.0346, 0.0461)。
 - 计算量的伏笔：原尺寸 784 → 50 → 10 有 39760 个参数，实测前 2000 个参数的耗时再按比例估算，算一次数值梯度在我们的机器上大约需要一个小时，跟硬件有关。第10讲的反向传播一次只要毫秒级。
 
 ## 依赖

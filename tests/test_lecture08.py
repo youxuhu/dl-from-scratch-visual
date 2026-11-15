@@ -93,3 +93,32 @@ def test_quick_training_runs():
     assert train_numerical.shrink_to_7x7(np.zeros((2, 784))).shape == (2, 49)
     net, log = train_numerical.train(iters=5)
     assert len(log["loss"]) == 5 and np.isfinite(log["loss"]).all()
+
+
+def test_book_gradient_1d():
+    import gradient_1d
+    assert gradient_1d.function_1(5.0) == pytest.approx(0.75)
+    assert gradient_1d.numerical_diff(gradient_1d.function_1, 5.0) == pytest.approx(0.2)
+
+
+def test_book_gradient_method():
+    import gradient_method
+    from common.gradient import gradient_descent
+    end, path = gradient_descent(gradient_method.function_2, [-3.0, 4.0], lr=0.1, step_num=20)
+    np.testing.assert_allclose(path[1], [-2.4, 3.2])
+    np.testing.assert_allclose(end, [-0.03458765, 0.04611686], atol=1e-6)
+
+
+def test_book_two_layer_net_matches_numerical():
+    """ch04 的 TwoLayerNet：解析梯度和数值梯度接近；predict 返回概率。"""
+    from lecture08.two_layer_net import TwoLayerNet
+    net = TwoLayerNet(3, 4, 2, seed=0)
+    x = np.array([[0.2, -0.1, 0.3], [0.0, 0.5, -0.2]])
+    t = np.array([0, 1])
+    y = net.predict(x)
+    assert y.shape == (2, 2) and np.allclose(y.sum(axis=1), 1.0)
+    analytic = net.gradient(x, t)
+    numeric = net.numerical_gradient(x, t)
+    for k in analytic:
+        np.testing.assert_allclose(analytic[k], numeric[k], atol=1e-5, err_msg=k)
+
