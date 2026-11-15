@@ -7,6 +7,7 @@
 | 文件 | 内容 |
 |---|---|
 | python_basics.py | 列表 `* 2` 是拼接、字典、for/if、函数、自己写的 Counter 类 |
+| man.py | 对齐鱼书 ch01/man.py 的类示例（类名 Man） |
 | numpy_arrays.py | np.array、`x * 2`、shape、dtype、逐元素加减乘除 |
 | broadcasting.py | 矩阵加向量、矩阵乘标量、矩阵加列向量 |
 | axis_sum.py | sum/max/argmax 沿 axis=0 和 axis=1 |

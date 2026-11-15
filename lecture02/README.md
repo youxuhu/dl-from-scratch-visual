@@ -9,7 +9,8 @@ plot 就是把一堆点连起来：采样点、sin 和 cos、xlabel/ylabel/title
 | 文件 | 内容 |
 |---|---|
 | _plotting.py | 设置 Agg 后端和输出目录 |
-| sin_cos.py | 采样点 → sin/cos 曲线 |
+| sin_cos.py | 采样点 → sin/cos 曲线（本讲动画用的稀疏采样 np.arange(0, 7, 0.2)） |
+| sin_cos_graph.py | 对齐鱼书 ch01/sin_cos_graph.py：np.arange(0, 6, 0.1)，共 60 个点 |
 | array_image.py | 5×5 数组 imshow、imsave/imread 往返；有 MNIST 缓存时显示测试集第一张图 |
 | loss_curve.py | 模拟的 1 万步损失记录 + 200 步滑动平均 |
 | subplots.py | 1×3 子图 |
@@ -18,6 +19,7 @@ plot 就是把一堆点连起来：采样点、sin 和 cos、xlabel/ylabel/title
 ```bash
 cd lecture02
 python sin_cos.py
+python sin_cos_graph.py
 python array_image.py   # QUICK=1 且没有 MNIST 缓存时跳过数字图，不联网
 python loss_curve.py
 python subplots.py
