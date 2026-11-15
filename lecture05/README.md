@@ -1,5 +1,7 @@
 # 第5讲 神经网络（上）：激活函数与多维数组运算
 
+对应鱼书：第3章 ch03/step_function.py、sigmoid.py、relu.py、sig_step_compare.py
+
 ## 这讲讲什么
 从感知机到神经网络：把感知机的输出拆成「加权和 a」和「激活函数 h」两步；阶跃函数、sigmoid、ReLU 的形状、实现和区别；为什么激活函数必须是非线性的（线性叠多少层都等于一层）；多维数组的 ndim 和 shape；用一行 `Y = np.dot(X, W)` 算完一整层神经元。
 
@@ -12,6 +14,10 @@
 | plot_activations.py | 三条曲线画在一张图上，存到 output/ |
 | why_nonlinear.py | h(x) = 2x 叠三层等于 8x；三个线性矩阵层合并成一个矩阵；sigmoid(2) 不等于 2·sigmoid(1) |
 | layer_dot.py | 2 输入 3 输出的一层：ndim、shape、逐列计算、np.dot |
+| step_function.py | 阶跃函数曲线，采样 np.arange(-5.0, 5.0, 0.1)（对齐鱼书 ch03/step_function.py） |
+| sigmoid.py | sigmoid 曲线（对齐 ch03/sigmoid.py） |
+| relu.py | ReLU 曲线（对齐 ch03/relu.py） |
+| sig_step_compare.py | sigmoid 和阶跃函数画在一起（对齐 ch03/sig_step_compare.py） |
 
 阶跃、sigmoid、ReLU 的函数本体在 common/functions.py（step_function、sigmoid、relu）。
 
@@ -20,6 +26,10 @@
 cd lecture05
 python activations.py
 python plot_activations.py
+python step_function.py
+python sigmoid.py
+python relu.py
+python sig_step_compare.py
 python why_nonlinear.py
 python layer_dot.py
 ```
