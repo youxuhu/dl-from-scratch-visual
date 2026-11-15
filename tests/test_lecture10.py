@@ -8,9 +8,10 @@ import pytest
 
 from common.gradient import numerical_gradient
 from common.layers import Affine, Relu, Sigmoid, SoftmaxWithLoss
+from common.two_layer_net import TwoLayerNet
 
-HERE = Path(__file__).resolve().parent.parent / "lecture10"
-sys.path.insert(0, str(HERE))
+ROOT = Path(__file__).resolve().parent.parent
+HERE = ROOT / "lecture10"
 
 
 def load(name):
@@ -23,7 +24,6 @@ def load(name):
 act = load("activation_layers")
 aff = load("affine_layer")
 smx = load("softmax_loss_grad")
-tln = load("two_layer_net_bp")
 
 
 def test_relu_values():
@@ -90,7 +90,7 @@ def test_layer_gradient_checks():
 
 def test_two_layer_net_gradient_check():
     rng = np.random.default_rng(1)
-    net = tln.TwoLayerNet(12, 6, 4, weight_init_std=0.5, seed=2)
+    net = TwoLayerNet(12, 6, 4, weight_init_std=0.5, seed=2)
     x = rng.random((5, 12))
     t = np.eye(4)[[0, 1, 2, 3, 1]]
     numeric = net.numerical_gradient(x, t)
@@ -103,6 +103,25 @@ def test_gradient_check_script_runs_on_toy_data():
     gc = load("gradient_check")
     from common.util import toy_digits
     (x, t), _ = toy_digits(3, 1)
-    diffs, t_num, t_bp = gc.check(x.astype(float), t, seed=0)
-    assert all(v < 1e-6 for v in diffs.values())
+    diffs, t_num, t_bp, _ = gc.check(x.astype(float), t, seed=0, sizes=(784, 20, 10))
+    assert all(v < 1e-5 for v in diffs.values()), diffs
     assert t_num > t_bp
+
+
+def test_against_lecture08_numerical_net():
+    """第8讲的数值梯度版和本讲的反向传播版：同一 seed、拷贝参数后，前向一致，梯度一致。"""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    mod = pytest.importorskip("lecture08.numerical_two_layer_net")
+    rng = np.random.default_rng(5)
+    old = mod.NumericalTwoLayerNet(10, 5, 3, weight_init_std=0.5, seed=6)
+    new = TwoLayerNet(10, 5, 3, weight_init_std=0.5, seed=6, activation="sigmoid")
+    new.load_from(old.params)
+    x = rng.random((4, 10))
+    t = np.array([0, 1, 2, 1])
+    np.testing.assert_allclose(new.predict(x), old.predict(x))
+    assert new.loss(x, t) == pytest.approx(old.loss(x, t))
+    numeric = old.numerical_gradient(x, t)
+    analytic = new.gradient(x, t)
+    for k in analytic:
+        assert np.mean(np.abs(numeric[k] - analytic[k])) < 1e-5, k

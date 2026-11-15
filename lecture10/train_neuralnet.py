@@ -7,12 +7,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np  # noqa: E402
 
+from common.two_layer_net import TwoLayerNet  # noqa: E402
 from common.util import get_mnist, is_quick  # noqa: E402
-from two_layer_net_bp import TwoLayerNet  # noqa: E402
 
 
 def train(iters, train_limit=None, test_limit=None, batch_size=100, lr=0.1, seed=0, verbose=True):
