@@ -11,6 +11,8 @@ CNN 的整体结构是「Conv、ReLU、Pooling」重复，再接「Affine、ReLU
 - 第14讲的实现提前拿来核对：common/util.py 的 im2col、conv_output_size，common/layers.py 的 Convolution、Pooling。
 - 说明：conv2d_loops、conv_one_channel、max_pool_loops 是「从零写一遍」的教学演示版本，只在本讲使用；后面各讲 import 的是 common 里的 Convolution、Pooling。
 
+对应鱼书：第7章 7.1到7.3节（书中这几节没有单独的源码文件；本讲脚本都是本仓库补充，用到的 Convolution、Pooling 对应书中 common/layers.py，im2col 对应 common/util.py）
+
 ## 文件
 | 文件 | 内容 |
 |---|---|
