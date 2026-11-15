@@ -1,5 +1,7 @@
 # 第7讲 神经网络的学习（上）：从数据中学习与损失函数
 
+对应鱼书：第4章 common/functions.py（sum_squared_error、cross_entropy_error）；mini-batch 的取法见 ch04/train_neuralnet.py
+
 ## 这讲讲什么
 「从数据中学习」是什么意思；训练数据和测试数据、泛化和过拟合；均方误差和交叉熵误差；one hot 标签和标签下标两种写法；mini-batch：随机抽 100 张算平均损失；为什么学习时看损失而不看精度（精度对参数的微小变化不敏感，导数几乎处处是 0）。
 
