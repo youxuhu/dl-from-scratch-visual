@@ -41,6 +41,12 @@ QUICK=1 python train_weights.py  # 只训练 50 步，结果存到 output/，不
 - 溢出：直接算 [1500, 1498, 1495] 得到 [nan nan nan]；减去最大值变成 [0, -2, -5]，softmax = [0.876, 0.118, 0.006]。
 - MNIST：测试集第 0 张标签 7，预测 7，概率 0.999；第一批 100 张输入 (100, 784)、输出 (100, 10)，这一批 100 张全对；**测试集 10000 张精度 0.9743（实测）**，逐张算和按批算结果相同（QUICK=1 时逐张只算前 1000 张，精度 0.983）。
 
+## 依赖
+- 第5讲 / common/functions.py：`sigmoid`；本讲 / common/functions.py：`softmax`、`identity`（本讲讲解，代码放在 common；softmax_demo.py 里的 `naive_softmax` 是演示溢出用的教学版）。
+- 第7讲要用的推理网络 `init_network`、`predict` 放在 common/simple_net.py。
+- train_weights.py 用 common/functions.py 的 `cross_entropy_error`（第7讲讲解）生成权重。
+- common/mnist.py：`load_mnist`。
+
 ## 和大纲的不同
 - 大纲的 3 层示例 X = [1.0, 0.5]、A1 = [0.3 0.7 1.1]、Z1 = [0.574 0.668 0.750] 和书中一样，这里换成自己的权重和输入，数值见上。
 - softmax 示例从 [0.3, 2.9, 4.0] 换成 [1.2, 3.1, 0.4]；溢出示例从 [1010, 1000, 990] 换成 [1500, 1498, 1495]。

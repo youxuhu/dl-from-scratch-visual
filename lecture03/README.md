@@ -28,6 +28,10 @@ python iris_demo.py
 - 把 epoch 4 的 acc 去掉：缺失 1 个，dropna 后 7 行，用其余 7 个的平均 fillna 填上 0.7989。
 - Iris 样本 shape (12, 5)，三种各 4 行；平均花瓣长度 setosa 1.400、versicolor 4.525、virginica 5.650；花瓣长度 > 5.0 的 4 行全是 virginica；one hot 矩阵形状 (12, 3)。
 
+## 依赖
+- 第1讲：布尔索引的思想（知识前置）；第2讲：画学习曲线（知识前置）。
+- 不 import common/ 的代码；数据随本目录提供。
+
 ## 和大纲的不同
 - 大纲画面里写的是「6 行 4 列的学生表（身高、体重、成绩、班级）」，主控已定改用训练日志表，所以这里是 8 行 3 列；条件筛选用 `acc > 0.9` 代替 `成绩 > 80`，to_numpy 演示用 `df[['loss', 'acc']]` 代替 `df[['身高','体重']]`。
 - groupby 和 one hot 放到 Iris 上演示（训练日志没有类别列）。
