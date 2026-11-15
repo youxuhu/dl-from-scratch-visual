@@ -53,7 +53,7 @@ tests/       pytest 测试，核对视频中显示的数值
 
 ## 致谢
 
-知识路线参考《深度学习入门：基于Python的理论与实现》，代码为独立实现
+本仓库的代码改编自斋藤康毅（Koki Saitoh）所著《深度学习入门：基于Python的理论与实现》的官方源代码（https://github.com/oreilly-japan/deep-learning-from-scratch）。该源码以 MIT 许可发布，我们在 MIT 许可下改编使用，版权声明见 [LICENSE](LICENSE)。书中的正文和插图受版权保护，本教程没有使用原书正文或插图，台词和画面均为自行编写、绘制。
 
 ## 许可证
 
