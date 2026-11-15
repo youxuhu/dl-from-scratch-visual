@@ -37,7 +37,7 @@ def test_single_step_formulas():
     assert one_step(AdaGrad(lr=0.1)) == pytest.approx(0.9, abs=1e-6)  # g/sqrt(g²) = 1
     assert one_step(Adam(lr=0.1)) == pytest.approx(0.9, abs=1e-5)     # 偏置修正后第一步约等于 lr
     assert one_step(RMSprop(lr=0.1)) == pytest.approx(1.0 - 0.1 * 0.5 / np.sqrt(0.01 * 0.25), abs=1e-5)
-    assert one_step(Nesterov(lr=0.1)) == pytest.approx(1.0 - 1.9 * 0.05)
+    assert one_step(Nesterov(lr=0.1)) == pytest.approx(1.0 - 0.81 * 0.05 - 1.9 * 0.05)  # 原书写法
 
 
 def test_optimizers_reach_minimum_of_bowl():

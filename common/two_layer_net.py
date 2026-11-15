@@ -1,4 +1,8 @@
-"""用反向传播求梯度的 2 层网络 TwoLayerNet（第10讲，独立实现）。
+"""用反向传播求梯度的 2 层网络 TwoLayerNet（第10讲）。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch05/two_layer_net.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。为了让第11讲以后也能导入，放在 common/ 里；
+类名、构造参数、层的命名（Affine1、Relu1、Affine2）和方法名与原书一致，注释改写成中文。
 
 层按顺序放进 OrderedDict：Affine1 → Relu1 → Affine2，最后接 SoftmaxWithLoss。
 构造参数和 params 键名与第8讲的数值梯度版 NumericalTwoLayerNet 相同，方便两者对照。

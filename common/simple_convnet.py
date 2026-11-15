@@ -1,9 +1,14 @@
-"""简单卷积网络 SimpleConvNet（独立实现），第14讲用。
+"""简单卷积网络 SimpleConvNet，第14讲用。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch07/simple_convnet.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。构造参数、层的命名（Conv1、Relu1、Pool1、Affine1、Relu2、Affine2）
+和方法名与原书一致；注释改写成中文，另加了可选的随机种子 seed 和各层输出形状 shapes。
 
 结构：Conv → ReLU → Pool(2×2) → Affine → ReLU → Affine → SoftmaxWithLoss。
 默认 MNIST 下各层输出形状：1×28×28 → 30×24×24 → 30×12×12 → 100 → 10。
 """
 import pickle
+from collections import OrderedDict
 
 import numpy as np
 
@@ -36,14 +41,17 @@ class SimpleConvNet:
 
     def _build(self, stride, pad):
         p = self.params
-        self.conv = Convolution(p["W1"], p["b1"], stride, pad)
-        self.fc1 = Affine(p["W2"], p["b2"])
-        self.fc2 = Affine(p["W3"], p["b3"])
-        self.layers = [self.conv, Relu(), Pooling(2, 2, stride=2), self.fc1, Relu(), self.fc2]
+        self.layers = OrderedDict()
+        self.layers["Conv1"] = Convolution(p["W1"], p["b1"], stride, pad)
+        self.layers["Relu1"] = Relu()
+        self.layers["Pool1"] = Pooling(pool_h=2, pool_w=2, stride=2)
+        self.layers["Affine1"] = Affine(p["W2"], p["b2"])
+        self.layers["Relu2"] = Relu()
+        self.layers["Affine2"] = Affine(p["W3"], p["b3"])
         self.last_layer = SoftmaxWithLoss()
 
     def predict(self, x):
-        for layer in self.layers:
+        for layer in self.layers.values():
             x = layer.forward(x)
         return x
 
@@ -65,11 +73,12 @@ class SimpleConvNet:
     def gradient(self, x, t):
         self.loss(x, t)
         g = self.last_layer.backward(1)
-        for layer in reversed(self.layers):
+        for layer in reversed(list(self.layers.values())):
             g = layer.backward(g)
-        return {"W1": self.conv.dW, "b1": self.conv.db,
-                "W2": self.fc1.dW, "b2": self.fc1.db,
-                "W3": self.fc2.dW, "b3": self.fc2.db}
+        L = self.layers
+        return {"W1": L["Conv1"].dW, "b1": L["Conv1"].db,
+                "W2": L["Affine1"].dW, "b2": L["Affine1"].db,
+                "W3": L["Affine2"].dW, "b3": L["Affine2"].db}
 
     def save_params(self, file_name="params.pkl"):
         with open(file_name, "wb") as fh:

@@ -1,6 +1,10 @@
-"""加深的卷积网络 DeepConvNet（独立实现），第15讲用。
+"""加深的卷积网络 DeepConvNet，第15讲用。
 
-6 个 3×3 卷积层，通道数依次 16、16、32、32、64、64（第 4 个卷积层填充 2，其余填充 1），
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch08/deep_convnet.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。构造参数 conv_param_1 到 conv_param_6、hidden_size、output_size
+和方法名与原书一致；注释改写成中文，另加了可选的 conv_plan（简写通道和填充，测试里用来搭小网络）、seed 和 shapes。
+
+默认结构：6 个 3×3 卷积层，通道数依次 16、16、32、32、64、64（第 4 个卷积层填充 2，其余填充 1），
 每两个卷积层后接 2×2 Max 池化；然后 Affine(64×4×4 → 50)、ReLU、Dropout(0.5)、
 Affine(50 → 10)、Dropout(0.5)、SoftmaxWithLoss。权重用 He 初始值。
 """
@@ -12,36 +16,48 @@ from common.gradient import numerical_gradient
 from common.layers import Affine, Convolution, Dropout, Pooling, Relu, SoftmaxWithLoss
 from common.util import conv_output_size
 
-CONV_PLAN = [  # (输出通道, 填充)
+CONV_PLAN = [  # (输出通道, 填充)，和下面 6 个默认 conv_param 一致
     (16, 1), (16, 1), (32, 1), (32, 2), (64, 1), (64, 1),
 ]
 
 
+def _param(filter_num, pad):
+    return {"filter_num": filter_num, "filter_size": 3, "pad": pad, "stride": 1}
+
+
 class DeepConvNet:
-    def __init__(self, input_dim=(1, 28, 28), conv_plan=None,
-                 hidden_size=50, output_size=10, seed=None):
-        plan = conv_plan or CONV_PLAN
+    def __init__(self, input_dim=(1, 28, 28),
+                 conv_param_1=_param(16, 1), conv_param_2=_param(16, 1),
+                 conv_param_3=_param(32, 1), conv_param_4=_param(32, 2),
+                 conv_param_5=_param(64, 1), conv_param_6=_param(64, 1),
+                 hidden_size=50, output_size=10, conv_plan=None, seed=None):
+        if conv_plan is not None:
+            conv_params = [_param(c, p) for c, p in conv_plan]
+        else:
+            conv_params = [conv_param_1, conv_param_2, conv_param_3,
+                           conv_param_4, conv_param_5, conv_param_6]
         rng = np.random.default_rng(seed)
         self.params = {}
         self.layers = []
         self.trainable = []        # (编号, 层)，算梯度时按这个顺序取 dW、db
         ch, side = input_dim[0], input_dim[1]
         self.shapes = [tuple(input_dim)]
-        for i, (out_ch, pad) in enumerate(plan, start=1):
-            fan_in = ch * 3 * 3
-            W = np.sqrt(2.0 / fan_in) * rng.standard_normal((out_ch, ch, 3, 3))
-            self.params[f"W{i}"], self.params[f"b{i}"] = W, np.zeros(out_ch)
-            conv = Convolution(self.params[f"W{i}"], self.params[f"b{i}"], 1, pad)
+        for i, cp in enumerate(conv_params, start=1):
+            fn, fs, pad, stride = cp["filter_num"], cp["filter_size"], cp["pad"], cp["stride"]
+            fan_in = ch * fs * fs
+            W = np.sqrt(2.0 / fan_in) * rng.standard_normal((fn, ch, fs, fs))
+            self.params[f"W{i}"], self.params[f"b{i}"] = W, np.zeros(fn)
+            conv = Convolution(self.params[f"W{i}"], self.params[f"b{i}"], stride, pad)
             self.layers += [conv, Relu()]
             self.trainable.append((i, conv))
-            ch, side = out_ch, conv_output_size(side, 3, 1, pad)
+            ch, side = fn, conv_output_size(side, fs, stride, pad)
             self.shapes.append((ch, side, side))
             if i % 2 == 0:
-                self.layers.append(Pooling(2, 2, stride=2))
+                self.layers.append(Pooling(pool_h=2, pool_w=2, stride=2))
                 side //= 2
                 self.shapes.append((ch, side, side))
         flat = ch * side * side
-        k = len(plan)
+        k = len(conv_params)
         for j, (n_in, n_out) in enumerate([(flat, hidden_size), (hidden_size, output_size)], start=k + 1):
             W = np.sqrt(2.0 / n_in) * rng.standard_normal((n_in, n_out))
             self.params[f"W{j}"], self.params[f"b{j}"] = W, np.zeros(n_out)

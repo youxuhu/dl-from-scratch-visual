@@ -1,4 +1,8 @@
-"""神经网络的各种层（独立实现）。
+"""神经网络的各种层。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 common/layers.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。类名、构造参数和属性名与原书一致，
+注释改写成中文，并补充了第9讲的 MulLayer、AddLayer（原书在 ch05/layer_naive.py）。
 
 每个层都有 forward 和 backward 两个方法：
 forward 算输出并记下反向要用的东西，backward 接收上游传来的梯度 dout，
@@ -77,12 +81,12 @@ class Affine:
         self.W = W
         self.b = b
         self.x = None
-        self.in_shape = None
+        self.original_x_shape = None
         self.dW = None
         self.db = None
 
     def forward(self, x):
-        self.in_shape = x.shape
+        self.original_x_shape = x.shape
         self.x = x.reshape(x.shape[0], -1) if x.ndim > 2 else x
         return np.dot(self.x, self.W) + self.b
 
@@ -95,7 +99,7 @@ class Affine:
         else:
             self.dW = np.dot(self.x.T, dout)
             self.db = dout.sum(axis=0)
-        return dx.reshape(self.in_shape)
+        return dx.reshape(self.original_x_shape)
 
 
 class SoftmaxWithLoss:
@@ -238,9 +242,12 @@ class Convolution:
 
 
 class Pooling:
-    """Max 池化层：每个窗口取最大值，没有参数，通道数不变。"""
+    """Max 池化层：每个窗口取最大值，没有参数，通道数不变。
 
-    def __init__(self, pool_h, pool_w, stride=2, pad=0):
+    和原书一样 stride 默认是 1，常用的 2×2、步幅 2 要写成 Pooling(2, 2, stride=2)。
+    """
+
+    def __init__(self, pool_h, pool_w, stride=1, pad=0):
         self.pool_h = pool_h
         self.pool_w = pool_w
         self.stride = stride

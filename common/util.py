@@ -1,4 +1,8 @@
-"""卷积相关的展开工具、数据打乱，以及训练脚本共用的取数据函数（独立实现）。
+"""卷积相关的展开工具、数据打乱，以及训练脚本共用的取数据函数。
+
+smooth_curve、shuffle_dataset、conv_output_size、im2col、col2im 的函数名和参数与
+《深度学习入门：基于Python的理论与实现》官方源码 common/util.py 一致（MIT 许可，Copyright (c) 2016 Koki Saitoh），
+展开的行列顺序也相同；im2col 这里用 sliding_window_view 实现。get_mnist、toy_digits、is_quick、get_pyplot 是本仓库加的。
 
 im2col 把卷积要看的每一个窗口拉成一行，卷积就变成一次矩阵乘法；
 col2im 反过来，把行矩阵里的数放回原图位置，重叠的位置累加。

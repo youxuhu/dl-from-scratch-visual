@@ -1,4 +1,8 @@
-"""通用训练循环 Trainer（独立实现），第12讲、第14讲、第15讲用。
+"""通用训练循环 Trainer，第12讲、第14讲、第15讲用。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 common/trainer.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。构造参数、属性名（train_loss_list、train_acc_list、
+test_acc_list）和方法名（train_step、train）与原书一致；注释改写成中文，另加了 max_iter、seed 两个可选参数。
 
 每一步：随机抽一个 mini-batch → network.gradient → optimizer.update；
 每过一个 epoch 在训练集、测试集上各评一次精度，记进列表，方便画曲线。
