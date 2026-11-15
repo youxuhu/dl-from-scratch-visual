@@ -1,5 +1,7 @@
 # 第6讲 神经网络（下）：3层网络、输出层与手写数字识别
 
+对应鱼书：第3章 ch03/neuralnet_mnist.py、neuralnet_mnist_batch.py；softmax 与 3 层前向传播见第3章正文，权重加载对齐 ch03 的 init_network / predict
+
 ## 这讲讲什么
 用 NumPy 写出一个 3 层神经网络的前向传播，跟踪每一层的形状；输出层用恒等函数（回归）还是 softmax（分类）；softmax 的溢出问题和「减去最大值」的修正；用训练好的权重识别 MNIST 手写数字，再把一张一张的推理改成 100 张一批。
 
@@ -9,8 +11,11 @@
 | three_layer.py | init_small_network、forward：2 → 3 → 2 → 2 的小网络，权重自己定 |
 | softmax_demo.py | softmax 的三步（exp、求和、相除）；直接算会溢出、减去最大值后正常 |
 | mnist_inference.py | get_data、逐张和按批算精度；init_network（读 weights/ 里的权重）和 predict 在 common/simple_net.py，因为第7讲也要用 |
-| train_weights.py | 生成 weights/ 里那份权重的脚本（手写的反向传播，原理在第9、10讲） |
+| neuralnet_mnist.py | 对齐鱼书 ch03/neuralnet_mnist.py：一张一张算精度，打印 Accuracy: |
+| neuralnet_mnist_batch.py | 对齐鱼书 ch03/neuralnet_mnist_batch.py：100 张一批算精度 |
+| train_weights.py | 生成 weights/ 里那份权重的脚本（手写的反向传播，原理在第9、10讲）。默认不覆盖已提交的权重，可用 --out、--log 指定路径 |
 | weights/mnist_784_50_100_10.npz | 训练好的权重，784 → 50 → 100 → 10，float32，约 167 KB |
+| results/train_log.json | 用同一脚本完整复现训练的日志（每 100 步的 loss、最后 100 步平均 loss、用时、测试精度、种子） |
 
 sigmoid、softmax、identity、load_mnist 都从 common/ 导入，本讲不重新定义。softmax_demo.py 里的 naive_softmax 只是为了演示溢出而写的「教学版」。
 
@@ -20,15 +25,17 @@ cd lecture06
 python three_layer.py
 python softmax_demo.py
 python mnist_inference.py        # 第一次运行会下载 MNIST 到仓库根目录的 dataset/
-python train_weights.py          # 重新训练权重，约 70 秒（会覆盖 weights/ 里的文件）
-QUICK=1 python train_weights.py  # 只训练 50 步，结果存到 output/，不覆盖
+python neuralnet_mnist.py        # 对齐鱼书的逐张推理
+python neuralnet_mnist_batch.py  # 对齐鱼书的批量推理
+python train_weights.py          # 完整训练，权重默认写到 output/，不会覆盖已提交的权重
+QUICK=1 python train_weights.py  # 只训练 50 步，结果存到 output/
 ```
 
 ## 权重是怎么来的
 - 网络结构 784 → 50 → 100 → 10，隐藏层 sigmoid，输出 softmax。
 - 初始化：标准正态 / sqrt(输入个数)，随机种子 6；mini-batch 100，学习率 0.5，12000 步（20 个 epoch），手写反向传播。
-- 最后 100 步平均训练 loss 0.0426，用时约 70 秒（8 核 CPU）。
-- 仓库直接提供训练好的权重文件（约 167 KB），视频和测试都用这一份。重新训练时多线程矩阵运算可能带来极小的浮点差异，精度可能和下面的数差一两个万分点。
+- 仓库里已提交的权重（weights/mnist_784_50_100_10.npz）是视频和测试使用的那一份，测试集精度 0.9743。
+- results/train_log.json 是后来用同一脚本、同一组超参数做的一次复现：种子 6，12000 步，用时 69.955 秒，最后 100 步平均训练 loss 0.042576（四位小数 0.0426），测试集精度同样是 0.9743。
 - 没有使用鱼书仓库的 sample_weight.pkl。
 
 ## 视频里出现的数值
