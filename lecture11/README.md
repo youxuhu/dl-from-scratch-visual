@@ -13,7 +13,14 @@ SGD 在 f(x, y) = x²/20 + y² 这种「一边陡一边缓」的函数上会走�
 | weight_init_activation_histogram.py | 5 个隐藏层的激活值分布：sigmoid 和 ReLU 各三种初始值 |
 | weight_init_compare.py | MNIST 上比较 std=0.01、Xavier、He 三种初始值（支持 QUICK=1） |
 | zero_init.py | 权重全相同时，两个隐藏神经元训练后仍完全相同 |
-| _plot.py | 画图小工具：装了 matplotlib 就把图存到 lecture11/output/，没装就跳过 |
+
+画图是可选的：装了 matplotlib 时，图存到 lecture11/output/（common/util.py 的 get_pyplot），没装就只打印数值。
+
+### 依赖
+- 第5讲：common/functions.py 的 sigmoid、relu（激活值分布实验）。
+- 第8讲：common/gradient.py 的 numerical_gradient（MultiLayerNet.numerical_gradient 内部调用，测试里做梯度确认）；common/mnist.py 的 load_mnist（经 get_mnist 调用）。
+- 第10讲：common/layers.py 的 Affine、Relu、Sigmoid、SoftmaxWithLoss（MultiLayerNet 由它们组装）。
+- 本讲新增到 common：common/optimizer.py 的 SGD、Momentum、Nesterov、AdaGrad、RMSprop、Adam；common/multi_layer_net.py 的 MultiLayerNet 和 init_scale（Xavier、He 初始值）。
 
 ## 怎么运行
 ```bash

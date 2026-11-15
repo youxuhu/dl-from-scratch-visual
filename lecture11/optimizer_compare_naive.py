@@ -7,11 +7,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np  # noqa: E402
 
 from common.optimizer import SGD, AdaGrad, Adam, Momentum  # noqa: E402
+from common.util import get_pyplot  # noqa: E402
+
+OUT = Path(__file__).resolve().parent / "output"
 
 START = (-7.0, 2.0)
 STEPS = 30
@@ -59,7 +61,7 @@ for _name in SETTINGS:
 
 
 def draw():
-    plt = __import__("_plot").get_pyplot()
+    plt = get_pyplot(OUT)
     if plt is None:
         return None
     xs, ys = np.meshgrid(np.linspace(-10, 10, 200), np.linspace(-5, 5, 100))
@@ -70,7 +72,7 @@ def draw():
         ax.plot(0, 0, "+", ms=10)
         ax.set_title(name)
     fig.tight_layout()
-    target = __import__("_plot").OUT / "optimizer_race.png"
+    target = OUT / "optimizer_race.png"
     fig.savefig(target)
     plt.close(fig)
     return target

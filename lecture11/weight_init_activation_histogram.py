@@ -3,15 +3,19 @@
 1000 个随机输入，每个 100 维，穿过 5 个隐藏层（每层 100 个神经元，不带偏置）。
 sigmoid 试 标准差 1、0.01、Xavier；ReLU 试 0.01、Xavier、He。打印每层的统计量和直方图计数。
 """
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")  # 小矩阵用多线程反而慢，机器忙时差几十倍
 import numpy as np  # noqa: E402
 
 from common.functions import relu, sigmoid  # noqa: E402
+from common.util import get_pyplot  # noqa: E402
+
+OUT = Path(__file__).resolve().parent / "output"
 
 NODES = 100
 DEPTH = 5
@@ -63,7 +67,7 @@ def main():
                   f"<0.01 占 {r['near0']:.1%}  >0.99 占 {r['near1']:.1%}")
     counts = histogram_counts(activations(sigmoid, 1.0))
     print("\nsigmoid + std=1 第1层直方图（[0,1] 分 10 格）：", counts[0])
-    plt = __import__("_plot").get_pyplot()
+    plt = get_pyplot(OUT)
     if plt is not None:
         fig, axes = plt.subplots(len(CASES), DEPTH, figsize=(12, 12))
         for row, (key, (act, scale)) in zip(axes, CASES.items()):
@@ -72,7 +76,7 @@ def main():
                 ax.set_title(f"{key[0]} {key[1]} L{i + 1}", fontsize=7)
                 ax.set_yticks([])
         fig.tight_layout()
-        fig.savefig(__import__("_plot").OUT / "activation_histogram.png")
+        fig.savefig(OUT / "activation_histogram.png")
         plt.close(fig)
 
 

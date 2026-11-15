@@ -3,17 +3,20 @@
 网络 MultiLayerNet(784, [100, 100, 100, 100], 10)，批大小 128，2000 次迭代。
 QUICK=1：只用 2000 张训练图、120 次迭代。四种方法用同一个初始权重（同一个 seed）。
 """
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")  # 小矩阵用多线程反而慢，机器忙时差几十倍
 import numpy as np  # noqa: E402
 
 from common.multi_layer_net import MultiLayerNet  # noqa: E402
 from common.optimizer import SGD, AdaGrad, Adam, Momentum  # noqa: E402
-from common.util import get_mnist, is_quick, smooth_curve  # noqa: E402
+from common.util import get_mnist, get_pyplot, is_quick, smooth_curve  # noqa: E402
+
+OUT = Path(__file__).resolve().parent / "output"
 
 OPTS = {
     "SGD": lambda: SGD(lr=0.01),
@@ -52,7 +55,7 @@ def main():
         tail = smooth_curve(losses[name])[-1]
         acc = nets[name].accuracy(x_test, t_test)
         print(f"{name:>8}: 平滑后最终损失 {tail:.4f}，测试精度 {acc:.4f}")
-    plt = __import__("_plot").get_pyplot()
+    plt = get_pyplot(OUT)
     if plt is not None:
         fig, ax = plt.subplots(figsize=(7, 4))
         for name in OPTS:
@@ -60,7 +63,7 @@ def main():
         ax.set_xlabel("iteration")
         ax.set_ylabel("loss")
         ax.legend()
-        fig.savefig(__import__("_plot").OUT / "optimizer_mnist.png")
+        fig.savefig(OUT / "optimizer_mnist.png")
         plt.close(fig)
 
 

@@ -5,12 +5,14 @@
 前者用 numerical_gradient、后者用 gradient，比较平均绝对误差，并对比耗时。
 第8讲的文件不在时，退回用 TwoLayerNet 自带的 numerical_gradient（同样调用 common/gradient.py）。
 """
+import os
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")  # 小矩阵用多线程反而慢，机器忙时差几十倍
 import numpy as np  # noqa: E402
 
 from common.two_layer_net import TwoLayerNet  # noqa: E402

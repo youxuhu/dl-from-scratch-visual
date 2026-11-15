@@ -3,11 +3,13 @@
 完整训练：10000 次迭代，批大小 100，学习率 0.1，每个 epoch 记录训练精度和测试精度。
 QUICK=1：只用 2000 张训练图、300 次迭代，几秒钟跑完。
 """
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")  # 小矩阵用多线程反而慢，机器忙时差几十倍
 import numpy as np  # noqa: E402
 
 from common.two_layer_net import TwoLayerNet  # noqa: E402

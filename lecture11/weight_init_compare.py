@@ -3,11 +3,13 @@
 网络 MultiLayerNet(784, [100, 100, 100, 100], 10)，激活 ReLU，SGD 学习率 0.01，批大小 128，2000 次迭代。
 QUICK=1：2000 张训练图、150 次迭代。
 """
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")  # 小矩阵用多线程反而慢，机器忙时差几十倍
 import numpy as np  # noqa: E402
 
 from common.multi_layer_net import MultiLayerNet  # noqa: E402
