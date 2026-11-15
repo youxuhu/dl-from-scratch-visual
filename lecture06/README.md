@@ -6,9 +6,9 @@
 ## 文件
 | 文件 | 内容 |
 |---|---|
-| three_layer.py | init_network、forward：2 → 3 → 2 → 2 的小网络，权重自己定 |
+| three_layer.py | init_small_network、forward：2 → 3 → 2 → 2 的小网络，权重自己定 |
 | softmax_demo.py | softmax 的三步（exp、求和、相除）；直接算会溢出、减去最大值后正常 |
-| mnist_inference.py | get_data、init_network（读 weights/ 里的权重）、predict、逐张和按批算精度 |
+| mnist_inference.py | get_data、逐张和按批算精度；init_network（读 weights/ 里的权重）和 predict 在 common/simple_net.py，因为第7讲也要用 |
 | train_weights.py | 生成 weights/ 里那份权重的脚本（手写的反向传播，原理在第9、10讲） |
 | weights/mnist_784_50_100_10.npz | 训练好的权重，784 → 50 → 100 → 10，float32，约 167 KB |
 

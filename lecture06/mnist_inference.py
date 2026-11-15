@@ -1,4 +1,7 @@
-"""用训练好的权重识别 MNIST 测试集：先一张一张地算，再 100 张一批地算。"""
+"""用训练好的权重识别 MNIST 测试集：先一张一张地算，再 100 张一批地算。
+
+init_network 和 predict 是本讲讲解的内容，因为第7讲还要用，代码放在 common/simple_net.py。
+"""
 import os
 import sys
 from pathlib import Path
@@ -7,28 +10,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np  # noqa: E402
 
-from common.functions import sigmoid, softmax  # noqa: E402
 from common.mnist import load_mnist  # noqa: E402
-
-HERE = Path(__file__).resolve().parent
-WEIGHTS = HERE / "weights" / "mnist_784_50_100_10.npz"
+from common.simple_net import init_network, predict  # noqa: E402  第6讲讲的网络，代码放在 common 里
 
 
 def get_data():
     _, (x_test, t_test) = load_mnist(normalize=True, flatten=True, one_hot_label=False)
     return x_test, t_test
-
-
-def init_network(path=WEIGHTS):
-    with np.load(path) as z:
-        return {k: z[k].astype(np.float64) for k in z.files}
-
-
-def predict(net, x):
-    """x 可以是一张图 (784,)，也可以是一批 (N, 784)。"""
-    z1 = sigmoid(np.dot(x, net["W1"]) + net["b1"])
-    z2 = sigmoid(np.dot(z1, net["W2"]) + net["b2"])
-    return softmax(np.dot(z2, net["W3"]) + net["b3"])
 
 
 def accuracy_one_by_one(net, x, t):

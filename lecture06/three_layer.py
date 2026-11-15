@@ -9,7 +9,7 @@ import numpy as np  # noqa: E402
 from common.functions import identity, sigmoid  # noqa: E402
 
 
-def init_network():
+def init_small_network():
     net = {}
     net["W1"] = np.array([[0.2, -0.3, 0.5], [0.4, 0.1, -0.2]])
     net["b1"] = np.array([0.1, 0.2, -0.1])
@@ -32,7 +32,7 @@ def forward(net, X):
 
 
 X = np.array([1.0, -0.5])
-network = init_network()
+network = init_small_network()
 steps = forward(network, X)
 shape_chain = [X.shape, network["W1"].shape, steps["Z1"].shape, network["W2"].shape,
                steps["Z2"].shape, network["W3"].shape, steps["Y"].shape]
