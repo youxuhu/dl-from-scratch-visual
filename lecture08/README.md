@@ -19,7 +19,7 @@
 | gradient_method.py | 对齐鱼书：从 (-3, 4) 出发、lr=0.1、20 步的梯度下降 |
 | gradient_simplenet.py | 对齐鱼书：类名 simpleNet |
 | two_layer_net.py | 对齐鱼书 ch04 的 TwoLayerNet（predict 返回 softmax；和第10讲的 common/two_layer_net.py 不是同一个文件） |
-| train_neuralnet.py | 对齐鱼书：用解析梯度训练 784→50→10，QUICK=1 时只跑 20 步 |
+| train_neuralnet.py | 对齐鱼书 ch04 的同名原文件：训练原尺寸 784→50→10，梯度用 `TwoLayerNet.gradient()`（借用的算得快的解析梯度，原理是第10讲的反向传播），QUICK=1 时只跑 20 步。第8讲视频只展示它的训练循环和超参数，不跑、不用它的结果，视频里的训练数字都来自 train_numerical.py；完整训练的结果等第10讲讲完反向传播再看 |
 | results/train_log.json | 完整训练一次的真实记录（每步 loss、每个 epoch 的训练/测试精度），视频里的曲线用它驱动 |
 
 ### NumericalTwoLayerNet 接口（第10讲依赖，不要随便改）
@@ -47,7 +47,7 @@ python gradient_simplenet.py
 QUICK=1 python train_numerical.py   # 只训练 20 步，约 5 秒
 python train_numerical.py           # 完整训练 1500 步，约 5 分钟，另外估算原尺寸网络的梯度耗时
 QUICK=1 python train_neuralnet.py   # 解析梯度版，只跑 20 步
-python train_neuralnet.py           # 对齐鱼书，完整训练 10000 步
+python train_neuralnet.py           # 对齐鱼书，完整训练 10000 步（第8讲视频不用它的结果）
 ```
 
 ## 视频里出现的数值

@@ -7,20 +7,44 @@
 
 ### 用法（在仓库根目录运行，Windows / macOS / Linux 都一样）
 
+**台式机开机后的顺序：**
+
+```bash
+python tools/run_full.py --figures-only       # 1. 先出确定性的图（约 5 秒），L00–L05、L07 等马上可以开渲
+python tools/run_full.py --jobs 4             # 2. 再跑完整训练（N 按核数选，见下文「并行」）
+python tools/run_full.py --check-keys         # 3. 每个占位符都显示「已有值」就齐了
+python tools/run_full.py --check-images       # 4. 台词引用的每张图都显示「完整模式 … 生成」就齐了
+```
+
+全部命令：
+
 ```bash
 python tools/run_full.py --list          # 看全部任务、每个任务产出的键、是否已完成
 python tools/run_full.py --check-keys    # 扫 dl-video-p2/out/*/scripts/*.json 里的【待填:…】，报告缺哪些键
-python tools/run_full.py --quick         # 先冒烟：QUICK=1 全流程跑一遍（约 1 分钟），结果写到 results_quick/
+python tools/run_full.py --check-images  # 扫台词里 RepoImage 引用的仓库图：在不在、哪个任务生成、是不是完整模式生成的
+python tools/run_full.py --quick         # 先冒烟：QUICK=1 全流程跑一遍（2 线程串行约 80 秒，--jobs 4 约 26 秒），结果写到 results_quick/
+python tools/run_full.py --figures-only  # 只跑确定性出图任务（见下文），几秒跑完
+python tools/run_full.py --no-figures    # 跳过所有 FIG_* 出图任务
+python tools/run_full.py --jobs 4        # 最多 4 个任务同时跑（各自一个子进程）
 python tools/run_full.py                 # 完整训练：跑全部还没完成的任务
-python tools/run_full.py --only L14      # 只跑第14讲（L14_train、L14_filter）；也可写任务名，可写多个
+python tools/run_full.py --only L14      # 只跑第14讲（L14_train、L14_filter、FIG_L14_*）；也可写任务名，可写多个；--only FIG 是全部出图任务
 python tools/run_full.py --force --only L10_train   # 已完成的任务也重跑
-python tools/run_full.py --threads 8     # 线程数（OPENBLAS/OMP/MKL_NUM_THREADS），默认用全部核
+python tools/run_full.py --threads 8     # 每个子进程的线程数（OPENBLAS/OMP/MKL_NUM_THREADS），默认 总核数 // jobs，至少 1
 python tools/run_full.py -v              # 把各脚本的输出同时打到屏幕
 ```
 
 - **断点续跑：** 每个任务跑完就把结果原子写入 `results/full_results.json`（先写临时文件再 rename）。中途关机或 Ctrl+C 后直接重跑同一条命令，已完成的任务会跳过。
 - **日志：** 每个任务一份，存在 `results/logs/<任务>.log`（utf-8）。日志开头记录开始时间、模式、线程数、仓库提交号、Python/NumPy 版本和机器信息，中间是脚本的全部 stdout+stderr，结尾是结束时间和用时。
 - **依赖：** `L14_filter` 依赖 `L14_train`；`L15_misclassified` 和 `L15_half_float` 依赖 `L15_train`。训练任务会记下参数文件（`lecture14/output/simple_convnet_params.pkl`、`lecture15/output/deep_convnet_params.pkl`）的 sha256。依赖它的任务开跑前会核对：文件被别的运行覆盖过（比如之后又跑了 `--quick`），就拒绝运行，提示先重跑训练任务。
+- **并行（`--jobs N`）：** 主进程开 N 个子进程同时跑任务，每个子进程的线程数默认是 `总核数 // N`（至少 1），`--threads` 可覆盖。依赖照样遵守：`L14_filter` 等 `L14_train` 跑完，`L15_misclassified`、`L15_half_float` 等 `L15_train` 跑完（会出 `filters.png`、`misclassified.png` 这类依赖参数的图的，就是这几个任务）。可开跑的任务按预计用时从长到短启动，所以 `L15_train` 总是第一个开。`full_results.json` 只由主进程写（子进程把结果交给主进程），不会并发覆盖。一个任务失败只影响依赖它的任务，其它照跑，最后汇总成功、失败各几个。
+  - 选 N：L15_train 一个任务就要 3 小时左右，总时长基本由它决定。建议 N = 3 或 4：L15_train 自己留一半核左右，其余任务在别的子进程里跑完。N 太大时每个子进程线程太少，L15_train 反而变慢。
+- **出图任务（`FIG_*`）：** 各讲 `output/` 下的图，按生成脚本一个脚本一个任务，共 22 个。完整模式下全部重跑，让每张图都来自当前代码。训练任务自己出的图（`optimizer_mnist.png`、`filters.png`、`misclassified.png`）随训练任务一起生成，不再单列。
+  - **确定性出图（21 个）：** 不依赖训练，`--figures-only` 只跑这些。2026-11-15 在本机实测：QUICK 跑一次、完整模式跑两次，25 张 png 的 sha256 三次完全一致，所以台式机上跑出来的和这里一样。它们是：lecture02 的 array_image、loss_curve、sin_cos、sin_cos_graph、subplots；lecture03 的 training_log；lecture04 的 decision_lines；lecture05 的 plot_activations、relu、sig_step_compare、sigmoid、step_function；lecture07 的 cross_entropy_curve；lecture08 的 gradient_1d、gradient_2d、gradient_demo、gradient_method；lecture11 的 optimizer_compare_naive、weight_init_activation_histogram；lecture14 的 apply_filter；lecture15 的 data_augmentation。
+    - 注意：array_image、apply_filter、data_augmentation 要读 MNIST，第一次跑会先下载。
+  - **要训练的出图（1 个）：** `FIG_L08_train_neuralnet` 对齐鱼书 ch04 的 train_neuralnet.py，用解析梯度跑 10000 步，约 1 分钟，只留下 `lecture08/output/train_neuralnet.png`。QUICK 只跑 20 步，图会变，所以不进 `--figures-only`。第8讲视频不用它，也不产键。
+- **产物记录：** 每个任务跑完，把它在本讲 `output/` 里写过的文件都记进 `full_results.json` 的 `artifacts`，每个文件记 sha256、生成任务、脚本、模式和时间。产物按子进程实际以写方式打开过的文件来认，所以并行时也不会记错。`--check-images` 就靠这张表判断一张图是不是完整模式生成的、之后有没有被改过。
+  - `lecture08/output/train_log.json` 由 `L08_numerical`（train_numerical.py 不开 QUICK）重新生成，也记在这张表里。
+  - `lecture08/results/train_log.json` 是已提交的一次完整运行记录，loss 保留 5 位小数。没有脚本会写 `results/`，run_full 也不碰它。
 - **数据检查：** 完整模式下如果 MNIST 下载失败、脚本换成了合成数据，该任务记为失败，不写结果。
 - **不改讲次脚本：** 每个任务在子进程（`sys.executable`）里导入对应脚本，调用它自己的 `main()`，步数、数据量、种子都由脚本决定。数值从脚本函数的返回值（套一层记录器）、`Trainer` 实例的精度曲线和打印输出里取。
 - **结果格式：** `values` 里一个键一个值，曲线类的键（`*_curve`）是列表。`tasks` 里记每个任务的状态、用时、数据来源、版本信息。
@@ -36,7 +60,6 @@ DeepConvNet 这类卷积网络受 CPU 影响最大。
 |---|---|---|---|
 | L06_inference | lecture06/mnist_inference.py（现成权重，只推理） | 0.6 秒 | 几秒 |
 | L08_numerical | lecture08/train_numerical.py（数值梯度 1500 步 + 原尺寸梯度耗时估算） | 3.3 秒 | 约 8 分钟（已有一次实测：训练 289 秒） |
-| L08_train_neuralnet | lecture08/train_neuralnet.py（解析梯度 10000 步） | 1.3 秒 | 约 1 分钟 |
 | L10_train | lecture10/train_neuralnet.py（10000 步） | 0.8 秒 | 约 1 分钟 |
 | L11_optimizer | lecture11/optimizer_compare_mnist.py（4 种优化器 × 2000 次） | 2.8 秒 | 约 1 分钟 |
 | L11_weight_init | lecture11/weight_init_compare.py（3 种初始值 × 2000 次） | 2.4 秒 | 约 1 分钟 |
@@ -49,7 +72,13 @@ DeepConvNet 这类卷积网络受 CPU 影响最大。
 | L15_train | lecture15/train_deepnet.py（DeepConvNet，20 epoch） | 21.2 秒 | 约 3 小时（按 QUICK 的 500 倍迭代外推） |
 | L15_misclassified | lecture15/misclassified_mnist.py（10000 张推理） | 1.8 秒 | 约 1 分钟 |
 | L15_half_float | lecture15/half_float_network.py（64 位、16 位各推理 10000 张） | 2.0 秒 | 约 1 到 2 分钟 |
-| **合计** | | **约 65 秒** | **约 3.5 到 4.5 小时，大头是 L15_train** |
+| FIG_L08_train_neuralnet | lecture08/train_neuralnet.py（解析梯度 10000 步，只出图） | 1.3 秒 | 约 1 分钟 |
+| 21 个确定性出图任务 | 见上文 | 共约 10 秒（--jobs 4 约 4 秒） | 同左（和 QUICK 完全一样） |
+| **合计** | | **串行约 80 秒，--jobs 4 约 26 秒** | **串行约 3.5 到 4.5 小时；--jobs 3~4 时约等于 L15_train 一个任务的时间（约 3 小时）** |
 
-建议先跑 `python tools/run_full.py --only L06 L08 L10 L11 L12`（半小时内跑完），再跑 `--only L14`，最后跑 `--only L15`。
-跑完后用 `python tools/run_full.py --check-keys`，每个占位符后面都显示「已有值」就齐了。
+不想并行时，也可以分批跑：先 `--only L06 L08 L10 L11 L12`（半小时内跑完），再 `--only L14`，最后 `--only L15`。
+
+### 键的说明
+
+- **`L08_numgrad_full_seconds`：** 不开 QUICK 跑 lecture08/train_numerical.py 时，最后一行「原尺寸 784 → 50 → 10 有 N 个参数，算一次数值梯度估计要 X 秒」里的 X，按打印的一位小数取。注意这是估计值：脚本抽样一部分参数计时，再按参数总数放大。同一行的 N 存成 `L08_full_grad_params`。
+- **精度类的键（`*_acc`）：** 存的是 0 到 1 的小数（如 0.9734）。填进台词时一律念成百分数（「百分之九十七点三」），不要念小数。

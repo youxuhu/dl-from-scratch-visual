@@ -52,13 +52,8 @@ TASKS = {
         dir="lecture08", script="train_numerical.py", deps=[],
         keys=["L08_num_loss_curve", "L08_num_train_acc_curve", "L08_num_test_acc_curve",
               "L08_num_final_train_acc", "L08_num_final_test_acc", "L08_num_seconds",
-              "L08_full_grad_params", "L08_full_grad_seconds_est"],
+              "L08_full_grad_params", "L08_numgrad_full_seconds"],
         desc="第8讲：数值梯度训练 7×7 缩小版 1500 步，并估算原尺寸一次数值梯度的耗时", scale=75),
-    "L08_train_neuralnet": dict(
-        dir="lecture08", script="train_neuralnet.py", deps=[],
-        keys=["L08_train_acc_curve", "L08_test_acc_curve", "L08_final_train_acc",
-              "L08_final_test_acc", "L08_final_loss"],
-        desc="第8讲：对齐鱼书的 train_neuralnet，解析梯度 10000 步", scale=500),
     "L10_train": dict(
         dir="lecture10", script="train_neuralnet.py", deps=[],
         keys=["L10_test_acc", "L10_train_acc", "L10_train_acc_curve", "L10_test_acc_curve",
@@ -117,6 +112,39 @@ TASKS = {
         keys=["L15_fp64_acc", "L15_fp16_acc"],
         desc="第15讲：用 L15_train 的参数比较 float64 和 float16 的精度（10000 张）", scale=33),
 }
+# 出图任务：各讲 output/ 下的图，按生成脚本一个任务（训练任务自己会出的图不在这里重复，见 OUTPUTS）
+FIGURE_SCRIPTS = [
+    ("lecture02", "array_image.py"), ("lecture02", "loss_curve.py"), ("lecture02", "sin_cos.py"),
+    ("lecture02", "sin_cos_graph.py"), ("lecture02", "subplots.py"), ("lecture03", "training_log.py"),
+    ("lecture04", "decision_lines.py"), ("lecture05", "plot_activations.py"), ("lecture05", "relu.py"),
+    ("lecture05", "sig_step_compare.py"), ("lecture05", "sigmoid.py"), ("lecture05", "step_function.py"),
+    ("lecture07", "cross_entropy_curve.py"), ("lecture08", "gradient_1d.py"), ("lecture08", "gradient_2d.py"),
+    ("lecture08", "gradient_demo.py"), ("lecture08", "gradient_method.py"),
+    ("lecture11", "optimizer_compare_naive.py"), ("lecture11", "weight_init_activation_histogram.py"),
+    ("lecture14", "apply_filter.py"), ("lecture15", "data_augmentation.py"),
+    ("lecture08", "train_neuralnet.py"),
+]
+for _d, _f in FIGURE_SCRIPTS:
+    TASKS[f"FIG_L{_d[-2:]}_{Path(_f).stem}"] = dict(
+        dir=_d, script=_f, deps=[], keys=[], figure=True,
+        desc=f"出图：重新生成 {_d}/{_f} 存到 {_d}/output/ 的图", scale=1)
+TASKS["FIG_L08_train_neuralnet"]["desc"] = (
+    "出图（要训练）：对齐鱼书 ch04 的 train_neuralnet，解析梯度 10000 步，只留 lecture08/output/train_neuralnet.png；"
+    "第8讲视频不用它，不产键")
+
+# 完整模式的粗估用时（分钟），--jobs 调度时按它从大到小先开
+EST_MIN = {"L15_train": 180, "L14_train": 30, "L08_numerical": 8, "L12_hparam": 5, "L15_half_float": 2,
+           "FIG_L08_train_neuralnet": 1}
+for _t, _s in TASKS.items():
+    _s["est_min"] = EST_MIN.get(_t, 0.1 if _s.get("figure") else 1)
+# 确定性出图：不依赖训练，QUICK 和完整模式出图逐字节相同（2026-11-15 本机实测 sha256，见 README）。
+# 其余 FIG_* 任务（随机数/QUICK 会改变图）只在正式 run_full 里跑，不进 --figures-only。
+# 实测：下面 21 个在 QUICK、完整模式各跑一次（完整模式跑两次），25 张 png 的 sha256 三次全部相同。
+# FIG_L08_train_neuralnet 要训练 10000 步（QUICK 只 20 步），图随模式变，不算确定性出图。
+STATIC_FIGS = {f"FIG_L{_d[-2:]}_{Path(_f).stem}" for _d, _f in FIGURE_SCRIPTS} - {"FIG_L08_train_neuralnet"}
+for _t in STATIC_FIGS:
+    TASKS[_t]["figure"] = "static"
+
 PARAM_FILES = {"L14_train": "lecture14/output/simple_convnet_params.pkl",
                "L15_train": "lecture15/output/deep_convnet_params.pkl"}
 
@@ -204,6 +232,17 @@ def worker(task, out_path):
         trainers.append(self)
     ct.Trainer.__init__ = trainer_init
 
+    # 记录脚本以写方式打开过的文件（并行时靠它把产物归到正确的任务，不靠 mtime 猜）
+    import builtins
+    written = set()
+    orig_open = builtins.open
+
+    def open_rec(file, mode="r", *a, **k):
+        if isinstance(file, (str, os.PathLike)) and any(c in mode for c in "wax+"):
+            written.add(str(Path(os.fspath(file)).resolve()))
+        return orig_open(file, mode, *a, **k)
+    builtins.open = io.open = open_rec
+
     calls = {}
     mod = _load(task)
     hooks = {"L08_numerical": ["train", "time_full_size_gradient"], "L10_train": ["train"],
@@ -214,9 +253,10 @@ def worker(task, out_path):
         calls[name] = []
         _record(mod, name, calls[name])
     mod.main()
+    builtins.open = io.open = orig_open
     text = tee.buf.getvalue()
-    r = EXTRACT[task](text, calls, trainers, np)
-    meta = {"data_sources": sorted(set(sources))}
+    r = EXTRACT[task](text, calls, trainers, np) if task in EXTRACT else {}
+    meta = {"data_sources": sorted(set(sources)), "written": sorted(written)}
     missing = [k for k in TASKS[task]["keys"] if k not in r]
     if missing:
         raise RuntimeError(f"任务没有产出这些键：{missing}")
@@ -235,19 +275,15 @@ def ex_L08_num(text, calls, trainers, np):
          "L08_num_final_test_acc": float(log["final_test_acc"]), "L08_num_seconds": float(log["seconds"])}
     if calls["time_full_size_gradient"]:
         n_total, est = calls["time_full_size_gradient"][-1][2]
-        r["L08_full_grad_params"], r["L08_full_grad_seconds_est"] = int(n_total), float(est)
+        # 照脚本最后一行「原尺寸 784 → 50 → 10 有 N 个参数，算一次数值梯度估计要 X 秒」取 N 和 X（X 按打印的一位小数）
+        m = re.findall(r"原尺寸 784 → 50 → 10 有 (\d+) 个参数，算一次数值梯度估计要 ([0-9.]+) 秒", text)
+        if not m:
+            raise RuntimeError("输出里找不到「算一次数值梯度估计要 X 秒」这一行")
+        r["L08_full_grad_params"], r["L08_numgrad_full_seconds"] = int(m[-1][0]), float(m[-1][1])
+        assert r["L08_full_grad_params"] == int(n_total) and abs(r["L08_numgrad_full_seconds"] - est) < 0.06
     else:  # QUICK 时脚本不做这一步
-        r["L08_full_grad_params"], r["L08_full_grad_seconds_est"] = None, None
+        r["L08_full_grad_params"], r["L08_numgrad_full_seconds"] = None, None
     return r
-
-
-def ex_L08_nn(text, calls, trainers, np):
-    pairs = re.findall(r"train acc, test acc \| ([0-9.]+), ([0-9.]+)", text)
-    if not pairs:
-        raise RuntimeError("输出里没有 train acc, test acc 行")
-    tr, te = [float(a) for a, _ in pairs], [float(b) for _, b in pairs]
-    return {"L08_train_acc_curve": tr, "L08_test_acc_curve": te, "L08_final_train_acc": tr[-1],
-            "L08_final_test_acc": te[-1], "L08_final_loss": _grab(text, r"最后一步 loss: ([0-9.]+)")}
 
 
 def ex_L10(text, calls, trainers, np):
@@ -365,7 +401,7 @@ def ex_L15_half(text, calls, trainers, np):
             "L15_fp16_acc": _grab(text, r"16 位浮点数：精度 ([0-9.]+)")}
 
 
-EXTRACT = {"L06_inference": ex_L06, "L08_numerical": ex_L08_num, "L08_train_neuralnet": ex_L08_nn,
+EXTRACT = {"L06_inference": ex_L06, "L08_numerical": ex_L08_num,
            "L10_train": ex_L10, "L11_optimizer": ex_L11_opt, "L11_weight_init": ex_L11_init,
            "L12_batchnorm": ex_L12_bn, "L12_weight_decay": ex_L12_wd, "L12_dropout": ex_L12_drop,
            "L12_hparam": ex_L12_hp, "L14_train": ex_L14_train, "L14_filter": ex_L14_filter,
@@ -421,16 +457,17 @@ def select(only):
     for item in only:
         for part in item.split(","):
             part = part.strip()
-            hit = [t for t in TASKS if t == part or t.startswith(part + "_") or t.split("_")[0] == part]
+            hit = [t for t in TASKS if t == part or t.startswith(part + "_") or t.split("_")[0] == part
+                   or t.startswith(f"FIG_{part}_")]
             if not hit:
                 raise SystemExit(f"不认识的任务或讲次：{part}（用 --list 看全部任务）")
             picked += [t for t in hit if t not in picked]
     return [t for t in TASKS if t in picked]   # 保持任务表顺序，依赖总在前面
 
 
-def run_task(task, args, results, results_path, log_dir):
-    spec = TASKS[task]
-    for dep in spec["deps"]:
+def check_deps(task, results):
+    """依赖任务必须已完成，且它存下的参数文件没被改过。只在主进程（主线程）里调用。"""
+    for dep in TASKS[task]["deps"]:
         d = results["tasks"].get(dep, {})
         if d.get("status") != "done":
             raise RuntimeError(f"依赖任务 {dep} 还没完成，先跑它（--only {dep}）")
@@ -439,6 +476,12 @@ def run_task(task, args, results, results_path, log_dir):
             f = REPO / rel
             if not f.exists() or sha256(f) != d.get("param_sha256"):
                 raise RuntimeError(f"{rel} 不是 {dep} 这次运行存下的参数（文件不存在或被改过），请 --force --only {dep}")
+
+
+def run_task(task, args, log_dir):
+    """在子进程里跑一个任务。可以在线程里并行调用：它只读 TASKS/args，不碰 results，
+    返回 (用时, 任务记录, 键值, 产物表)，由主线程统一写进 full_results.json。"""
+    spec = TASKS[task]
     env = dict(os.environ)
     env.pop("QUICK", None)
     if args.quick:
@@ -450,8 +493,13 @@ def run_task(task, args, results, results_path, log_dir):
     env["MPLBACKEND"] = "Agg"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / f"{task}.log"
-    tmp_out = results_path.with_name(f".{task}.worker.json")
+    tmp_out = log_dir.parent / f".{task}.worker.json"
     info = machine_info()
+    out_dir = REPO / spec["dir"] / "output"
+    def _snap():
+        return {f.name: (f.stat().st_mtime_ns, f.stat().st_size) for f in out_dir.iterdir() if f.is_file()} \
+            if out_dir.exists() else {}
+    before = _snap()
     started, t0 = now(), time.time()
     with open(log_path, "w", encoding="utf-8", newline="\n") as log:
         log.write(f"任务 {task}：{spec['desc']}\n脚本 {spec['dir']}/{spec['script']}\n开始 {started}\n"
@@ -480,14 +528,29 @@ def run_task(task, args, results, results_path, log_dir):
            "seconds": round(seconds, 1), "log": str(log_path.relative_to(REPO)) if log_path.is_relative_to(REPO)
            else str(log_path), "keys": spec["keys"], "data_sources": srcs, "threads": args.threads,
            "python": info["python"], "numpy": info["numpy"], "platform": info["platform"], "commit": git_commit()}
+    # 记下这个任务在本讲 output/ 里新写（或重写）的文件：图、日志 JSON、参数 pkl
+    made, arts = {}, {}
+    after = _snap()
+    names = {Path(w).name for w in payload["meta"].get("written", [])
+             if Path(w).parent == out_dir.resolve() and Path(w).is_file()}
+    if args.jobs == 1:   # 串行时 output/ 只有这一个任务在写，mtime 变化的也算上（防止 C 扩展直接写文件漏记）
+        names |= {n for n in after if before.get(n) != after[n]}
+    if names:
+        for name in sorted(names):
+            if True:
+                f = out_dir / name
+                rel = f.relative_to(REPO).as_posix()
+                made[rel] = sha256(f)
+                arts[rel] = {
+                    "sha256": made[rel], "task": task, "script": f"{spec['dir']}/{spec['script']}",
+                    "mode": rec["mode"], "generated": now()}
+    if spec.get("figure") and not any(k.endswith(".png") for k in made):
+        raise RuntimeError(f"出图任务没有在 {spec['dir']}/output/ 生成任何 png（matplotlib 没装？）")
+    rec["outputs"] = made
     if task in PARAM_FILES:
         rec["param_file"] = PARAM_FILES[task]
         rec["param_sha256"] = sha256(REPO / PARAM_FILES[task])
-    results["tasks"][task] = rec
-    results["values"].update(payload["values"])
-    results["meta"].update({"mode": rec["mode"], "updated": now()})
-    save_results(results_path, results)
-    return seconds
+    return seconds, rec, payload["values"], arts
 
 
 def scan_placeholders(root):
@@ -515,6 +578,53 @@ def check_keys(root, results):
     return 1 if missing else 0
 
 
+def scan_images(root):
+    """返回 {图片相对仓库路径: [(执行员, 文件, 段落 id), ...]}：台词 JSON 里所有 params.repo_image。"""
+    found = {}
+    for f in sorted(Path(root).glob("*/scripts/*.json")):
+        data = json.loads(f.read_text(encoding="utf-8"))
+        for seg in data.get("segments", []):
+            img = (seg.get("params") or {}).get("repo_image")
+            if img:
+                found.setdefault(img, []).append((f.parent.parent.name, f.name, seg.get("id")))
+    return found
+
+
+def generator_of(rel):
+    """静态查找：哪个任务的脚本里写了这个图的文件名。"""
+    name = Path(rel).name
+    lecture = Path(rel).parts[0]
+    hits = []
+    for t, s in TASKS.items():
+        if s["dir"] == lecture and name in (REPO / s["dir"] / s["script"]).read_text(encoding="utf-8"):
+            hits.append(t)
+    return hits
+
+
+def check_images(root, results):
+    arts = results.get("artifacts", {})
+    imgs = scan_images(root)
+    print(f"扫描 {root}/*/scripts/*.json：台词引用了 {len(imgs)} 张仓库图")
+    bad = 0
+    for rel, where in sorted(imgs.items()):
+        f = REPO / rel
+        gens = generator_of(rel)
+        rec = arts.get(rel)
+        exists = f.exists()
+        if rec:
+            same = exists and sha256(f) == rec["sha256"]
+            origin = f"{rec['mode']} 模式 {rec['task']} 生成" + ("" if same else "，但文件之后被改过/覆盖")
+        else:
+            same, origin = False, "run_full 没有记录（手动运行或别处生成）"
+        ok = exists and gens and rec and same and rec["mode"] == "full"
+        bad += not ok
+        users = "、".join(sorted({f"{a}/{b}" for a, b, _ in where}))
+        print(f"  {'OK ' if ok else '-- '}{rel}\n      引用：{users}；存在：{'是' if exists else '否'}；"
+              f"生成任务：{'、'.join(gens) or '找不到'}；来源：{origin}")
+    print(f"{len(imgs) - bad} 张已由完整模式生成且未被改动，{bad} 张还不是（台式机跑完 run_full 后应为 0）")
+    return 1 if bad else 0
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--only", nargs="+", help="只跑这些任务；写任务名（L14_train）或讲次（L14），可逗号分隔")
@@ -522,15 +632,25 @@ def main(argv=None):
     p.add_argument("--force", action="store_true", help="已完成的任务也重跑")
     p.add_argument("--quick", action="store_true", help="QUICK=1 冒烟测试，默认写到 results_quick/")
     p.add_argument("--check-keys", action="store_true", help="扫台词里的【待填:…】，报告哪些键没有任务产出")
+    p.add_argument("--check-images", action="store_true",
+                   help="扫台词里 RepoImage 引用的图：是否存在、由哪个任务生成、是否来自完整模式")
+    p.add_argument("--figures-only", action="store_true",
+                   help="只跑确定性的出图任务（不依赖训练、QUICK 与完整模式出图逐字节相同），几秒跑完")
+    p.add_argument("--no-figures", action="store_true", help="跳过所有 FIG_* 出图任务")
     p.add_argument("--scripts-root", type=Path, default=DEFAULT_SCRIPTS_ROOT,
                    help=f"台词 JSON 的根目录（下面是 A/B/C/scripts/*.json），默认 {DEFAULT_SCRIPTS_ROOT}")
     p.add_argument("--results-dir", type=Path, default=None, help="结果目录，默认 results/（--quick 时 results_quick/）")
-    p.add_argument("--threads", type=int, default=os.cpu_count() or 1, help="OPENBLAS/OMP/MKL 线程数，默认全部核")
+    p.add_argument("--jobs", "-j", type=int, default=1, help="同时跑几个任务（子进程），默认 1；依赖照样遵守，最久的先开")
+    p.add_argument("--threads", type=int, default=None,
+                   help="每个子进程的 OPENBLAS/OMP/MKL 线程数，默认 总核数 // jobs（至少 1）")
     p.add_argument("--keep-going", action="store_true", help="某个任务失败后继续跑后面的（默认也继续，只跳过依赖它的）")
     p.add_argument("-v", "--verbose", action="store_true", help="把脚本输出同时打到屏幕")
     p.add_argument("--_worker", help=argparse.SUPPRESS)
     p.add_argument("--_out", help=argparse.SUPPRESS)
     args = p.parse_args(argv)
+    args.jobs = max(1, args.jobs)
+    if args.threads is None:
+        args.threads = max(1, (os.cpu_count() or 1) // args.jobs)
 
     if args._worker:
         try:
@@ -548,7 +668,13 @@ def main(argv=None):
 
     if args.check_keys:
         return check_keys(args.scripts_root, results)
+    if args.check_images:
+        return check_images(args.scripts_root, results)
     tasks = select(args.only)
+    if args.figures_only:
+        tasks = [t for t in tasks if TASKS[t].get("figure") == "static"]
+    if args.no_figures:
+        tasks = [t for t in tasks if not TASKS[t].get("figure")]
     if args.list:
         for t in tasks:
             s, st = TASKS[t], results["tasks"].get(t, {})
@@ -556,26 +682,72 @@ def main(argv=None):
             print(f"{t:20s} {state}\n    {s['desc']}\n    依赖：{'、'.join(s['deps']) or '无'}\n    键：{'、'.join(s['keys'])}")
         return 0
 
-    print(f"结果文件 {results_path}；模式 {'QUICK 冒烟' if args.quick else '完整训练'}；线程 {args.threads}")
-    failed, total = [], time.time()
+    print(f"结果文件 {results_path}；模式 {'QUICK 冒烟' if args.quick else '完整训练'}；"
+          f"并行 {args.jobs} 个任务，每个 {args.threads} 线程")
+    return schedule(tasks, args, results, results_path, rdir / "logs")
+
+
+def schedule(tasks, args, results, results_path, log_dir):
+    """按依赖调度，最多 args.jobs 个任务同时跑；只有本函数（主线程）改 results 和写 full_results.json。"""
+    from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+    t_all = time.time()
+    todo = []
     for t in tasks:
         if not args.force and results["tasks"].get(t, {}).get("status") == "done":
             print(f"跳过 {t}（已完成，--force 可重跑）")
-            continue
-        if any(d in failed for d in TASKS[t]["deps"]):
-            print(f"跳过 {t}（依赖的任务失败了）")
-            failed.append(t)
-            continue
-        print(f"开始 {t}：{TASKS[t]['desc']}  [{now()}]", flush=True)
-        try:
-            sec = run_task(t, args, results, results_path, rdir / "logs")
-            print(f"完成 {t}，用时 {sec:.1f} 秒")
-        except Exception as e:
-            failed.append(t)
-            results["tasks"][t] = {"status": "failed", "error": str(e), "finished": now()}
-            save_results(results_path, results)
-            print(f"失败 {t}：{e}")
-    print(f"全部结束，用时 {time.time() - total:.1f} 秒；失败 {len(failed)} 个" + (f"：{failed}" if failed else ""))
+        else:
+            todo.append(t)
+    ok, failed, running = [], [], {}
+
+    def finished_ok(dep):
+        return dep in ok or (dep not in todo and results["tasks"].get(dep, {}).get("status") == "done")
+
+    def fail(t, msg):
+        failed.append(t)
+        results["tasks"][t] = {"status": "failed", "error": msg, "finished": now()}
+        save_results(results_path, results)
+        print(f"失败 {t}：{msg}", flush=True)
+
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        while todo or running:
+            # 依赖失败（或没选上又没完成）的任务直接判失败，不影响别的任务
+            for t in list(todo):
+                bad = [d for d in TASKS[t]["deps"] if d in failed or (d not in todo and d not in running.values()
+                                                                    and not finished_ok(d))]
+                if bad:
+                    todo.remove(t)
+                    fail(t, f"依赖任务 {'、'.join(bad)} 失败或未完成")
+            ready = [t for t in todo if all(finished_ok(d) for d in TASKS[t]["deps"])]
+            ready.sort(key=lambda t: -TASKS[t].get("est_min", 1))      # 最久的（L15_train）先开
+            while ready and len(running) < args.jobs:
+                t = ready.pop(0)
+                todo.remove(t)
+                try:
+                    check_deps(t, results)
+                except Exception as e:
+                    fail(t, str(e))
+                    continue
+                print(f"开始 {t}：{TASKS[t]['desc']}  [{now()}]", flush=True)
+                running[pool.submit(run_task, t, args, log_dir)] = t
+            if not running:
+                continue
+            done, _ = wait(running, return_when=FIRST_COMPLETED)
+            for fut in done:
+                t = running.pop(fut)
+                try:
+                    sec, rec, values, arts = fut.result()
+                except Exception as e:
+                    fail(t, str(e))
+                    continue
+                results["tasks"][t] = rec
+                results["values"].update(values)
+                results.setdefault("artifacts", {}).update(arts)
+                results["meta"].update({"mode": rec["mode"], "updated": now()})
+                save_results(results_path, results)
+                ok.append(t)
+                print(f"完成 {t}，用时 {sec:.1f} 秒", flush=True)
+    print(f"全部结束，用时 {time.time() - t_all:.1f} 秒；成功 {len(ok)} 个，失败 {len(failed)} 个"
+          + (f"：{'、'.join(failed)}" if failed else ""))
     return 1 if failed else 0
 
 
