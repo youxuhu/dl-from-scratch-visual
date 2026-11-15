@@ -8,6 +8,7 @@ import pickle
 
 import numpy as np
 
+from common.gradient import numerical_gradient
 from common.layers import Affine, Convolution, Dropout, Pooling, Relu, SoftmaxWithLoss
 from common.util import conv_output_size
 
@@ -68,6 +69,11 @@ class DeepConvNet:
             scores = self.predict(x[start:start + batch_size], train_flg=False)
             hits += int(np.sum(scores.argmax(axis=1) == truth[start:start + batch_size]))
         return hits / x.shape[0]
+
+    def numerical_gradient(self, x, t):
+        """数值梯度，只用于梯度确认。用推理模式的损失，所以对照时要先把 Dropout 的比例设成 0。"""
+        return {k: numerical_gradient(lambda _: self.loss(x, t, train_flg=False), v)
+                for k, v in self.params.items()}
 
     def gradient(self, x, t):
         self.loss(x, t, train_flg=True)

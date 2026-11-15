@@ -30,10 +30,14 @@ def is_quick():
     return os.environ.get("QUICK", "") not in ("", "0")
 
 
-def conv_output_size(input_size, filter_size, stride=1, pad=0):
-    """输出边长 = (输入边长 + 2*填充 - 滤波器边长) / 步幅 + 1。除不尽时报错。"""
+def conv_output_size(input_size, filter_size, stride=1, pad=0, strict=True):
+    """输出边长 = (输入边长 + 2*填充 - 滤波器边长) / 步幅 + 1。
+
+    strict=True 时除不尽就报错（讲公式时用）；strict=False 时向下取整，
+    最后放不下一个完整窗口的那几行、几列直接丢掉（池化遇到奇数边长时就是这样）。
+    """
     span = input_size + 2 * pad - filter_size
-    if span < 0 or span % stride != 0:
+    if span < 0 or (strict and span % stride != 0):
         raise ValueError(f"尺寸对不上：H={input_size} P={pad} FH={filter_size} S={stride}")
     return span // stride + 1
 
@@ -46,8 +50,8 @@ def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
     """
     imgs = np.asarray(input_data)
     n, c, h, w = imgs.shape
-    oh = conv_output_size(h, filter_h, stride, pad)
-    ow = conv_output_size(w, filter_w, stride, pad)
+    oh = conv_output_size(h, filter_h, stride, pad, strict=False)
+    ow = conv_output_size(w, filter_w, stride, pad, strict=False)
     if pad:
         imgs = np.pad(imgs, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
     # windows 的形状：(N, C, 所有行位置, 所有列位置, filter_h, filter_w)
@@ -64,8 +68,8 @@ def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
     同一个像素出现在几个窗口里，就会被加几次，反向传播时正好是梯度的累加。
     """
     n, c, h, w = input_shape
-    oh = conv_output_size(h, filter_h, stride, pad)
-    ow = conv_output_size(w, filter_w, stride, pad)
+    oh = conv_output_size(h, filter_h, stride, pad, strict=False)
+    ow = conv_output_size(w, filter_w, stride, pad, strict=False)
     blocks = np.asarray(col).reshape(n, oh, ow, c, filter_h, filter_w)
     canvas = np.zeros((n, c, h + 2 * pad, w + 2 * pad), dtype=blocks.dtype)
     for dy in range(filter_h):
