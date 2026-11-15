@@ -84,8 +84,11 @@ DeepConvNet 这类卷积网络受 CPU 影响最大。
 
 - 代码仓库自己的路径都按 `tools/run_full.py` 的位置推导，不写死目录。
 - `--check-keys`、`--check-images` 要读制作仓库 dl-video-production 的 `out/*/scripts/*.json`：
-  - 先看 `--scripts-root`，再看环境变量 `DLVIS_SCRIPTS_ROOT`，否则找与代码仓库并排的制作仓库 `../dl-video-production`，用它的 `lib/dlvis/paths.py` 推导（即 `out/`）。
-  - 找不到、目录不存在或里面没有 `*/scripts/*.json` 时直接报错退出，不会静默扫空；运行时第一行打印实际扫的目录。
+  - 显式 `--scripts-root` 优先级最高（render_all 就用它）；
+  - 其次环境变量 `DLVIS_SCRIPTS_ROOT`；
+  - 再找与代码仓库并排的 `../dl-video-p2/out`、`../dl-video-production/out`（按 GitHub 默认名克隆就是后者），路径相对代码仓库根目录；
+  - run_full 自己推导，不 import 制作仓库的 lib/dlvis/paths.py，所以单独克隆代码仓库也能跑；
+  - 都找不到、目录不存在或里面没有 `*/scripts/*.json` 时直接报错退出，不会静默扫空；运行时第一行打印实际扫的目录。
 - 制作仓库的生成器（out/C/gen_L*.py）用环境变量 `DLVIS_REPO` 找代码仓库，没有就找并排的 `../dl-from-scratch-visual`。
 
 ### 键的说明
