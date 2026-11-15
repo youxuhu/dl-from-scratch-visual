@@ -9,3 +9,8 @@ venv/
 .ipynb_checkpoints/
 .DS_Store
 dataset/
+# tools/run_full.py：QUICK 冒烟结果和日志不进仓库
+results_quick/
+/results/logs/
+/results/*.tmp*
+/results/.*.worker.json
