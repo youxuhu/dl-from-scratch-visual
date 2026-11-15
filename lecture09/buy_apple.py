@@ -1,4 +1,9 @@
-"""第9讲：买 2 个苹果（单价 100），再乘消费税 1.1。先正向算总价，再反向求每个输入的梯度。"""
+"""第9讲：买 2 个苹果（单价 100），再乘消费税 1.1。先正向算总价，再反向求每个输入的梯度。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch05/buy_apple.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。变量名和计算顺序与原书一致，注释改写成中文，
+另加了「单价加 0.01」的对照小实验。
+"""
 import sys
 from pathlib import Path
 
@@ -14,13 +19,11 @@ mul_apple_layer = MulLayer()
 mul_tax_layer = MulLayer()
 
 
-def forward(apple_price=apple, count=apple_num, tax_rate=tax):
-    subtotal = mul_apple_layer.forward(apple_price, count)   # 200
-    return subtotal, mul_tax_layer.forward(subtotal, tax_rate)  # 220
+# 正向
+apple_price = mul_apple_layer.forward(apple, apple_num)  # 200
+price = mul_tax_layer.forward(apple_price, tax)          # 220
 
-
-apple_price, price = forward()
-
+# 反向
 dprice = 1
 dapple_price, dtax = mul_tax_layer.backward(dprice)
 dapple, dapple_num = mul_apple_layer.backward(dapple_price)

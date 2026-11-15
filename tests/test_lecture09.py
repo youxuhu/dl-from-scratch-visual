@@ -45,7 +45,7 @@ def test_buy_apple():
 
 
 def test_buy_apple_orange():
-    assert fruit.forward_values["fruit_total"] == 650
+    assert fruit.forward_values["all_price"] == 650
     assert fruit.price == pytest.approx(715)
     expect = {"dApple": 2.2, "dApple_num": 110, "dOrange": 3.3, "dOrange_num": 165, "dTax": 650}
     for k, v in expect.items():
