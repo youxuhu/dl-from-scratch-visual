@@ -1,6 +1,8 @@
 """第6讲的 3 层推理网络（784 → 50 → 100 → 10），沉淀到 common 给后面各讲复用。
 
-权重文件是 lecture06/weights/mnist_784_50_100_10.npz（由 lecture06/train_weights.py 训练得到）。
+函数名 init_network、predict 对齐鱼书 ch03/neuralnet_mnist.py
+（MIT, Copyright (c) 2016 Koki Saitoh）。权重用本仓库训练的
+lecture06/weights/mnist_784_50_100_10.npz，不使用鱼书的 sample_weight.pkl。
 """
 from pathlib import Path
 

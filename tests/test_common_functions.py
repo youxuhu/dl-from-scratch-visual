@@ -83,3 +83,19 @@ def test_mnist_shapes():
     assert ttr2.shape == (60000, 10)
     (x3, _), _ = mnist.load_mnist(flatten=False, normalize=False)
     assert x3.shape == (60000, 1, 28, 28) and x3.dtype == np.uint8
+
+
+def test_book_aliases_and_extra_functions():
+    """鱼书函数名可用，且与本仓库已有别名一致。"""
+    from common.functions import (identity, identity_function, relu, relu_grad,
+                                  softmax, softmax_loss, sum_squared_error,
+                                  cross_entropy_error)
+    x = np.array([-1.0, 0.0, 2.0])
+    assert identity is identity_function
+    np.testing.assert_array_equal(relu_grad(x), [0, 1, 1])
+    y = np.array([0.7, 0.2, 0.1])
+    t = np.array([1.0, 0.0, 0.0])
+    assert sum_squared_error(y, t) == pytest.approx(0.5 * ((0.3 ** 2) + 0.2 ** 2 + 0.1 ** 2))
+    assert softmax_loss(np.array([1.0, 2.0, 3.0]), 2) == pytest.approx(
+        cross_entropy_error(softmax(np.array([1.0, 2.0, 3.0])), 2))
+

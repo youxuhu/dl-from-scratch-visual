@@ -1,7 +1,11 @@
-"""MNIST 加载器（独立实现）。
+"""MNIST 加载器。
 
-第一次运行时从网上下载 4 个 gz 文件，解析后存成 dataset/mnist.npz，
-以后直接读缓存。dataset/ 已写进 .gitignore，不进仓库。
+接口对齐 oreilly-japan/deep-learning-from-scratch 的 dataset/mnist.py
+（MIT, Copyright (c) 2016 Koki Saitoh）：load_mnist(normalize, flatten, one_hot_label)
+返回 (x_train, t_train), (x_test, t_test)。
+
+缓存用 npz（dataset/mnist.npz）而不是鱼书的 pickle；下载镜像和 MNIST_DIR
+可配置。dataset/ 已写进 .gitignore，不进仓库。
 """
 import gzip
 import os
@@ -92,3 +96,21 @@ def load_mnist(normalize=True, flatten=True, one_hot_label=False):
             t = to_one_hot(t)
         out[split] = (x, t)
     return out["train"], out["test"]
+
+
+# 鱼书 dataset/mnist.py 中的同名接口，便于对照。
+def download_mnist():
+    """下载 4 个 gz 文件（若尚未缓存）。"""
+    for fname in FILES.values():
+        _download(fname)
+
+
+def init_mnist():
+    """下载并写入 dataset/mnist.npz 缓存。"""
+    _load_raw()
+
+
+def _change_one_hot_label(X, num_classes=10):
+    """鱼书同名函数，等价于 to_one_hot。"""
+    return to_one_hot(X, num_classes)
+
