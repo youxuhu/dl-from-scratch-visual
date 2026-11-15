@@ -31,12 +31,12 @@ QUICK=1 python lecture08/train_numerical.py   # 训练类脚本加 QUICK=1 只�
 | 第7讲 | 神经网络的学习（上）：从数据中学习与损失函数 | [lecture07/](lecture07/) | 代码已完成 |
 | 第8讲 | 神经网络的学习（下）：数值微分、梯度与学习算法 | [lecture08/](lecture08/) | 代码已完成 |
 | 第9讲 | 误差反向传播法（上）：计算图与链式法则 | [lecture09/](lecture09/) | 代码制作中 |
-| 第10讲 | 误差反向传播法（下）：各种层与完整实现 | [lecture10/](lecture10/) | 代码制作中 |
+| 第10讲 | 误差反向传播法（下）：激活函数层、Affine/Softmax 层与完整实现 | [lecture10/](lecture10/) | 代码制作中 |
 | 第11讲 | 与学习相关的技巧（上）：参数更新与权重初始值 | [lecture11/](lecture11/) | 代码制作中 |
-| 第12讲 | 与学习相关的技巧（下）：Batch Normalization、正则化与超参数 | [lecture12/](lecture12/) | 代码制作中 |
+| 第12讲 | 与学习相关的技巧（下）：Batch Normalization、正则化与超参数验证 | [lecture12/](lecture12/) | 代码制作中 |
 | 第13讲 | 卷积神经网络（上）：卷积层与池化层 | [lecture13/](lecture13/) | 代码制作中 |
-| 第14讲 | 卷积神经网络（下）：im2col 与 CNN 的实现 | [lecture14/](lecture14/) | 代码制作中 |
-| 第15讲 | 深度学习：加深网络与前沿 | [lecture15/](lecture15/) | 代码制作中 |
+| 第14讲 | 卷积神经网络（下）：im2col、CNN 的实现与可视化 | [lecture14/](lecture14/) | 代码制作中 |
+| 第15讲 | 深度学习：加深网络、历史、高速化、应用与未来 | [lecture15/](lecture15/) | 代码制作中 |
 
 ## 目录结构
 
