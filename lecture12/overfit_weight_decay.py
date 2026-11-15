@@ -1,8 +1,11 @@
 """第12讲：故意制造过拟合，再用权值衰减缓解。
 
-只用 300 个训练样本，7 层网络 784 → 100×6 → 10，SGD 学习率 0.01，批大小 100，200 个 epoch。
+只用 300 个训练样本，7 层网络 784 → 100×6 → 10，SGD 学习率 0.01，批大小 100，201 个 epoch（和原书一样，epoch 0 到 200）。
 分别跑 λ = 0 和 λ = 0.1，对比训练精度和测试精度的差距。
 QUICK=1：60 个 epoch，测试集只取 1000 张。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch06/overfit_weight_decay.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。实验设置（300 个样本、7 层网络、λ = 0.1、201 个 epoch）与原书一致；注释改写成中文，保留中间结果打印和 QUICK 模式。
 """
 import os
 import sys
@@ -38,7 +41,7 @@ def main():
     quick = is_quick()
     (x_train, t_train), (x_test, t_test), source = get_mnist(
         train_limit=300, test_limit=1000 if quick else None)
-    epochs = 60 if quick else 200
+    epochs = 60 if quick else 201
     print(f"数据：{source}，训练 300 张，{epochs} 个 epoch")
     for lam in (0.0, 0.1):
         tr, te, wsize = run(x_train, t_train, x_test, t_test, lam, epochs)

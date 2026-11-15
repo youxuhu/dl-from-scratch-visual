@@ -115,3 +115,17 @@ def test_shuffle_and_validation_split():
     assert train[0].shape[0] == 400 and val[0].shape[0] == 100
     lr_r, wd_r = hp.narrowed([(0.9, 1e-3, 1e-6), (0.8, 1e-2, 1e-5), (0.7, 1e-4, 1e-7)], top=2)
     assert lr_r == pytest.approx((-3, -2)) and wd_r == pytest.approx((-6, -5))
+
+
+def test_batch_norm_gradient_check_script():
+    """batch_norm_gradient_check.py 的 check：小网络、合成数据，平均绝对误差都应 < 1e-5。"""
+    import importlib.util
+    from common.util import toy_digits
+    path = Path(__file__).resolve().parent.parent / "lecture12" / "batch_norm_gradient_check.py"
+    spec = importlib.util.spec_from_file_location("l12_batch_norm_gradient_check", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    (x, t), _ = toy_digits(3, 1)
+    diffs = mod.check(x.astype(float), t, hidden_size_list=(6, 5))
+    assert set(diffs) >= {"W1", "b1", "gamma1", "beta1", "W3", "b3"}
+    assert max(diffs.values()) < 1e-5

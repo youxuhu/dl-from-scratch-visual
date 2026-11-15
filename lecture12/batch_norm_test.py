@@ -3,6 +3,9 @@
 1000 个训练样本，20 个 epoch，网络 784 → 100×5 → 10，SGD 学习率 0.01，批大小 100，
 标准差取 np.logspace(0, -4, num=16)，对应视频里 4×4 的小倍数图。
 QUICK=1：只取其中 4 个标准差、300 个样本、4 个 epoch。
+
+改编自《深度学习入门：基于Python的理论与实现》官方源码 ch06/batch_norm_test.py
+（MIT 许可，Copyright (c) 2016 Koki Saitoh）。实验设置（1000 个样本、20 个 epoch、学习率 0.01、16 个标准差）与原书一致；注释改写成中文，保留中间结果打印和 QUICK 模式。
 """
 import os
 import sys
